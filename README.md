@@ -27,7 +27,7 @@ Este é um projeto de um **chat instantâneo** construído com **Node.js (backen
 
 ### Frontend
 - React
-- NextJS
+- Vite
 - TypeScript
 - Tailwind
 
