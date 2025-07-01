@@ -1,13 +1,11 @@
 import { UserDTO } from "@shared/dtos/UserDTO";
-import { Message } from "./Message";
-
 export class User {
     private name: string
     private color: string
-    private idConnection: string | undefined
+    private idConnection: string
     static usersGlobal: User[] = []
 
-    constructor(name:string,color:string,idConnection:string | undefined){
+    constructor(name:string,color:string,idConnection:string){
         this.name = name;
         this.color = color;
         this.idConnection = idConnection;
@@ -17,8 +15,8 @@ export class User {
         User.usersGlobal.push(user)
     }
 
-    public talk(message:Message){
-        message.createMessage(message)
+    public static removeUser(user:UserDTO){
+        User.usersGlobal = User.usersGlobal.filter(usr=>usr.idConnection !== user.idConnection)
     }
 
     public static returnUsersDTO(){

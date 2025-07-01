@@ -34,8 +34,16 @@ io.on('connection',(socket)=>{
     socket.on(Events.SETUSER,(user: UserDTO)=>{
         const newUser = new User(user.name,user.color,user.idConnection)
         newUser.createUser(newUser)
-        socket.broadcast.emit(Events.NEWUSER,User.returnUsersDTO())
-        socket.emit(Events.NEWUSER, User.returnUsersDTO());
+        socket.broadcast.emit(Events.NEWUSER,user)
+        socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
+        socket.emit(Events.UPDATEUSERLIST, User.returnUsersDTO());
+    })
+
+    socket.on(Events.REMOVEUSER,(user: UserDTO)=>{
+        User.removeUser(user)
+        socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
+        socket.emit(Events.UPDATEUSERLIST, User.returnUsersDTO());
+        socket.broadcast.emit(Events.OFFUSER,user)
     })
 });
 

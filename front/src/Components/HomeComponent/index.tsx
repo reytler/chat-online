@@ -3,10 +3,22 @@ import { io, Socket } from "socket.io-client";
 import { HomeLogin } from "./_HomeLogin";
 import { UserDTO } from "@shared/dtos/UserDTO";
 import { Events } from "@shared/enums/enumEvents";
+import { Button } from "../ui/button";
 
 export default function HomeComponent(){
     const [socket, setSocket] = useState<Socket | null>(null);
     const [user,setUser] = useState<UserDTO|null>(null);
+
+    function handleLogin(user: UserDTO){
+        socket?.emit(Events.SETUSER,user)
+        setUser(user)
+    }
+
+    function handleLogout(){
+        socket?.emit(Events.REMOVEUSER,user)
+        setUser(null)
+        socket?.disconnect()
+    }
 
     useEffect(()=>{
         const socketIo = io("http://localhost:3001");
@@ -24,21 +36,28 @@ export default function HomeComponent(){
     useEffect(()=>{
         if (!socket) return;
 
-        function handleNewUser(users: UserDTO[]) {
+        function handleNewUser(user: UserDTO) {
+            alert(`${user.name} Entrou...`)
+        }
+
+        function handleOffUser(user: UserDTO){
+            alert(`${user.name} Saiu...`)
+        }
+
+        function handleListUsers(users: UserDTO[]){
             console.log("users: ", users);
         }
 
         socket.on(Events.NEWUSER,handleNewUser)
-        
+        socket.on(Events.UPDATEUSERLIST,handleListUsers)
+        socket.on(Events.OFFUSER,handleOffUser)
+
         return () => {
             socket.off(Events.NEWUSER, handleNewUser);
+            socket.off(Events.UPDATEUSERLIST, handleListUsers);
+            socket.on(Events.OFFUSER,handleOffUser);
         };
     },[socket])
-
-    function handleLogin(user: UserDTO){
-        socket?.emit(Events.SETUSER,user)
-        setUser(user)
-    }
 
     if(socket === null){
         return(
@@ -60,6 +79,7 @@ export default function HomeComponent(){
         return(
             <>
             <p>Olá, {user.name}</p>
+            <Button onClick={handleLogout}>Sair</Button>
             </>
         )
     }
