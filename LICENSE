@@ -1,21 +1,20 @@
-MIT License
-
 Copyright (c) 2025 Reytler Souza
+Todos os direitos reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este software é fornecido exclusivamente para fins de desenvolvimento, testes e uso pessoal do autor. Nenhuma parte deste software pode ser copiada, reproduzida, modificada, distribuída, sublicenciada, armazenada em sistema de recuperação ou transmitida, de qualquer forma ou por qualquer meio — eletrônico, mecânico, fotocópia, gravação ou outro — sem autorização prévia e expressa por escrito do autor.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+É expressamente proibido:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+- Usar este software para fins comerciais ou pessoais sem permissão.
+- Redistribuir ou disponibilizar este software publicamente.
+- Modificar, descompilar, fazer engenharia reversa ou criar trabalhos derivados com base neste software.
+- Publicar ou divulgar trechos do código, exceto mediante autorização formal do autor.
+
+Este software é fornecido "no estado em que se encontra", sem garantias de qualquer tipo, expressas ou implícitas, incluindo, mas não se limitando a garantias de comercialização, adequação a um determinado fim ou não violação.
+
+O uso não autorizado deste software poderá resultar em sanções civis e criminais conforme as leis aplicáveis.
+
+Para obter permissão de uso, entre em contato com:
+
+Reytler Souza  
+reytlercompare@hotmail.com
