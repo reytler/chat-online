@@ -4,10 +4,10 @@ import { Message } from "./Message";
 export class User {
     private name: string
     private color: string
-    private idConnection: string
+    private idConnection: string | undefined
     static usersGlobal: User[] = []
 
-    constructor(name:string,color:string,idConnection:string){
+    constructor(name:string,color:string,idConnection:string | undefined){
         this.name = name;
         this.color = color;
         this.idConnection = idConnection;

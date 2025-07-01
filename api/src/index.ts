@@ -35,6 +35,7 @@ io.on('connection',(socket)=>{
         const newUser = new User(user.name,user.color,user.idConnection)
         newUser.createUser(newUser)
         socket.broadcast.emit(Events.NEWUSER,User.returnUsersDTO())
+        socket.emit(Events.NEWUSER, User.returnUsersDTO());
     })
 });
 
