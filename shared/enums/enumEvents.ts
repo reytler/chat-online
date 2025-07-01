@@ -1,0 +1,6 @@
+export enum Events {
+    SENDMESSAGE = 'SENDMESSAGE',
+    NEWMESSAGE = 'NEWMESSAGE',
+    NEWUSER = 'NEWUSER',
+    SETUSER = 'SETUDER'
+}
