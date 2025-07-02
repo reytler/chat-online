@@ -18,6 +18,7 @@ export default function HomeComponent(){
         socket?.emit(Events.REMOVEUSER,user)
         setUser(null)
         socket?.disconnect()
+        window.location.reload()
     }
 
     useEffect(()=>{

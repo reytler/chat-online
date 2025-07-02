@@ -3,13 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* *{
-  background-color: #1C1C1C;
-  color: #00BFFF;
-  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-} */
-
-/* @theme inline {
+@theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -123,4 +117,4 @@
   body {
     @apply bg-background text-foreground;
   }
-} */
+}

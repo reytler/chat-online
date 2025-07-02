@@ -41,17 +41,18 @@ export function HomeLogin({handleLogin,idConnection}:TPropsHomeLogin){
             handleLogin(user)
         }else{
             console.log('Falha ao encontrar id do socket: ',idConnection)
+            alert(`Falha ao encontrar id do socket: ${idConnection}`)
         }
     }
 
     return(
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col justify-center items-center gap-5 mt-5">
                 <FormField
                     control={form.control}
                     name="name"
                     render={({field})=>(
-                        <FormItem>
+                        <FormItem className="flex flex-col items-center">
                             <FormLabel>Apelido</FormLabel>
                             <FormControl>
                                 <Input placeholder="Digite seu apelido..." {...field}/>
@@ -64,7 +65,7 @@ export function HomeLogin({handleLogin,idConnection}:TPropsHomeLogin){
                     control={form.control}
                     name="color"
                     render={({field})=>(
-                        <FormItem>
+                        <FormItem className="flex flex-col items-center">
                             <FormLabel>Escolha uma cor</FormLabel>
                             <HexColorPicker
                                 color={field.value}
