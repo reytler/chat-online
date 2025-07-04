@@ -4,10 +4,13 @@ import { HomeLogin } from "./_HomeLogin";
 import { UserDTO } from "@shared/dtos/UserDTO";
 import { Events } from "@shared/enums/enumEvents";
 import { Button } from "../ui/button";
+import { NotificationType, notify, NotifyHeader } from "../Notification";
+import { Home } from "../Home";
 
 export default function HomeComponent(){
     const [socket, setSocket] = useState<Socket | null>(null);
     const [user,setUser] = useState<UserDTO|null>(null);
+    const [connectedUsers,setConnectedUsers] = useState<UserDTO[]|null>(null);
 
     function handleLogin(user: UserDTO){
         socket?.emit(Events.SETUSER,user)
@@ -38,15 +41,15 @@ export default function HomeComponent(){
         if (!socket) return;
 
         function handleNewUser(user: UserDTO) {
-            alert(`${user.name} Entrou...`)
+            notify(`${user.name} Entrou...`,NotificationType.INFO)
         }
 
         function handleOffUser(user: UserDTO){
-            alert(`${user.name} Saiu...`)
+            notify(`${user.name} Saiu...`,NotificationType.INFO)
         }
 
         function handleListUsers(users: UserDTO[]){
-            console.log("users: ", users);
+            setConnectedUsers(users)
         }
 
         socket.on(Events.NEWUSER,handleNewUser)
@@ -79,8 +82,7 @@ export default function HomeComponent(){
     if(user !== null){
         return(
             <>
-            <p>Olá, {user.name}</p>
-            <Button onClick={handleLogout}>Sair</Button>
+                <Home connectedUsers={connectedUsers} handleLogout={handleLogout} user={user}/>
             </>
         )
     }
