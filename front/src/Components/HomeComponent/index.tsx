@@ -3,14 +3,15 @@ import { io, Socket } from "socket.io-client";
 import { HomeLogin } from "./_HomeLogin";
 import { UserDTO } from "@shared/dtos/UserDTO";
 import { Events } from "@shared/enums/enumEvents";
-import { Button } from "../ui/button";
-import { NotificationType, notify, NotifyHeader } from "../Notification";
-import { Home } from "../Home";
+import { NotificationType, notify } from "../Notification";
+import { HomeView } from "../Home";
+import { MessageDTO } from "@shared/dtos/MessageDTO";
 
 export default function HomeComponent(){
     const [socket, setSocket] = useState<Socket | null>(null);
     const [user,setUser] = useState<UserDTO|null>(null);
-    const [connectedUsers,setConnectedUsers] = useState<UserDTO[]|null>(null);
+    const [connectedUsers,setConnectedUsers] = useState<UserDTO[]>([]);
+    const [messages,setMessages] = useState<MessageDTO[]>([]);
 
     function handleLogin(user: UserDTO){
         socket?.emit(Events.SETUSER,user)
@@ -82,7 +83,7 @@ export default function HomeComponent(){
     if(user !== null){
         return(
             <>
-                <Home connectedUsers={connectedUsers} handleLogout={handleLogout} user={user}/>
+                <HomeView connectedUsers={connectedUsers} handleLogout={handleLogout} user={user} messages={messages}/>
             </>
         )
     }

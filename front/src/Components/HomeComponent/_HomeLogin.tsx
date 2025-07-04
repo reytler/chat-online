@@ -52,7 +52,7 @@ export function HomeLogin({handleLogin,idConnection}:TPropsHomeLogin){
                     control={form.control}
                     name="name"
                     render={({field})=>(
-                        <FormItem className="flex flex-col items-center">
+                        <FormItem className="flex flex-col items-center mt-5">
                             <FormLabel>Apelido</FormLabel>
                             <FormControl>
                                 <Input placeholder="Digite seu apelido..." {...field}/>
