@@ -29,6 +29,7 @@ io.on('connection',(socket)=>{
         const message = new Message(msg.content,msg.idConnection,msg.userName)
         message.createMessage(message)
         socket.broadcast.emit(Events.NEWMESSAGE, Message.returnMessagesDTO())
+        socket.emit(Events.NEWMESSAGE, Message.returnMessagesDTO());
     })
 
     socket.on(Events.SETUSER,(user: UserDTO)=>{

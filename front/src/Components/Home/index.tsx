@@ -1,18 +1,21 @@
 import { UserDTO } from "@shared/dtos/UserDTO"
 import { MessageDTO } from "@shared/dtos/MessageDTO"
-import { NotifyHeader } from "../Notification"
+import { NotificationType, notify, NotifyHeader } from "../Notification"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
 import { Separator } from "../ui/separator"
-import { Input } from "../ui/input"
+import { Textarea } from "../ui/textarea"
+import { useState } from "react"
 
 export type THomeProps = {
     connectedUsers: UserDTO[]
     user: UserDTO
     handleLogout: ()=>void
     messages: MessageDTO[]
+    handleSendMessage: (message: MessageDTO)=>void
 }
-export function HomeView({user, handleLogout,messages, connectedUsers}: THomeProps){
+export function HomeView({user, handleLogout,messages, connectedUsers,handleSendMessage}: THomeProps){
+    const [content,setContent] = useState<string>("");
      return(
         <div className="h-screen flex flex-col">
             <header className="p-4 shadow z-10 flex gap-2">
@@ -25,7 +28,7 @@ export function HomeView({user, handleLogout,messages, connectedUsers}: THomePro
                     <ScrollArea className="flex-1 p-4 space-y-2 h-[60vh]">
                         {messages.map((msg, idx) => (
                         <div key={idx} className="p-2 rounded bg-muted">
-                            <strong>{msg.userName}:</strong> {msg.content}
+                            <strong style={{color: connectedUsers.find(cu=>cu.idConnection === msg.idConnection)?.color}}>{msg.userName}:</strong> {msg.content}
                         </div>
                         ))}
                     </ScrollArea>
@@ -36,12 +39,23 @@ export function HomeView({user, handleLogout,messages, connectedUsers}: THomePro
                         className="flex items-center gap-2 p-4 border-t bg-background sticky bottom-0"
                         onSubmit={(event) => {
                             event.preventDefault();
-                            console.log("Enviar:", event);
+                            if(content.trim() === ""){
+                                notify("Digite algo antes de enviar!",NotificationType.ERROR)
+                                return
+                            }
+                            const newmessage: MessageDTO = {
+                                content: content,
+                                idConnection: user.idConnection,
+                                userName: user.name
+                            }
+                            handleSendMessage(newmessage)
+                            setContent("")
                         }}
                     >
-                        <Input
+                        <Textarea
                             placeholder="Digite sua mensagem..."
-                            onChange={(e) =>{}}
+                            onChange={(event) =>setContent(event.target.value)}
+                            value={content}
                         />
                         <Button type="submit">Enviar</Button>
                     </form>

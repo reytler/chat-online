@@ -18,6 +18,10 @@ export default function HomeComponent(){
         setUser(user)
     }
 
+    function handleSendMessage(message: MessageDTO){
+        socket?.emit(Events.SENDMESSAGE,message)
+    }
+
     function handleLogout(){
         socket?.emit(Events.REMOVEUSER,user)
         setUser(null)
@@ -53,14 +57,20 @@ export default function HomeComponent(){
             setConnectedUsers(users)
         }
 
+        function handleNewMessage(messages: MessageDTO[]){
+            setMessages(messages)
+        }
+
         socket.on(Events.NEWUSER,handleNewUser)
         socket.on(Events.UPDATEUSERLIST,handleListUsers)
         socket.on(Events.OFFUSER,handleOffUser)
+        socket.on(Events.NEWMESSAGE,handleNewMessage)
 
         return () => {
             socket.off(Events.NEWUSER, handleNewUser);
             socket.off(Events.UPDATEUSERLIST, handleListUsers);
-            socket.on(Events.OFFUSER,handleOffUser);
+            socket.off(Events.OFFUSER,handleOffUser);
+            socket.off(Events.NEWMESSAGE,handleNewMessage)
         };
     },[socket])
 
@@ -83,7 +93,13 @@ export default function HomeComponent(){
     if(user !== null){
         return(
             <>
-                <HomeView connectedUsers={connectedUsers} handleLogout={handleLogout} user={user} messages={messages}/>
+                <HomeView 
+                    connectedUsers={connectedUsers} 
+                    handleLogout={handleLogout} 
+                    user={user} 
+                    messages={messages}
+                    handleSendMessage={handleSendMessage}
+                />
             </>
         )
     }

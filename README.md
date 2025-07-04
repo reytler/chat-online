@@ -50,8 +50,8 @@ Este é um projeto de um **chat instantâneo** construído com **Node.js (backen
 
 ## 🚧 Funcionalidades em Desenvolvimento
 
-- [ ] Envio e recebimento de mensagens entre usuários
-- [ ] Exibição de mensagens em tempo real no frontend
+- [x] Envio e recebimento de mensagens entre usuários
+- [x] Exibição de mensagens em tempo real no frontend
 - [ ] Histórico de mensagens por sessão (em memória ou banco)
 - [ ] Criação e navegação entre salas temáticas
 - [ ] Participação da IA nas conversas via integração com API (Ex: OpenAI, Gemini etc.)
