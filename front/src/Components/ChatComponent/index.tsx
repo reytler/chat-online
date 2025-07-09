@@ -9,18 +9,19 @@ import { useState } from "react"
 
 export type THomeProps = {
     connectedUsers: UserDTO[]
-    user: UserDTO
+    userName: string
+    idConnection: string
     handleLogout: ()=>void
     messages: MessageDTO[]
     handleSendMessage: (message: MessageDTO)=>void
 }
-export function HomeView({user, handleLogout,messages, connectedUsers,handleSendMessage}: THomeProps){
+export function ChatComponent({userName, idConnection, handleLogout,messages, connectedUsers,handleSendMessage}: THomeProps){
     const [content,setContent] = useState<string>("");
      return(
         <div className="h-screen flex flex-col">
             <header className="p-4 shadow z-10 flex gap-2">
                 <NotifyHeader/>
-                <p>Olá, {user.name}</p>
+                <p>Olá, {userName}</p>
                 <Button onClick={handleLogout}>Sair</Button>
             </header>
             <div className="flex flex-1 overflow-hidden">
@@ -45,8 +46,8 @@ export function HomeView({user, handleLogout,messages, connectedUsers,handleSend
                             }
                             const newmessage: MessageDTO = {
                                 content: content,
-                                idConnection: user.idConnection,
-                                userName: user.name
+                                idConnection: idConnection,
+                                userName: userName
                             }
                             handleSendMessage(newmessage)
                             setContent("")
@@ -63,7 +64,7 @@ export function HomeView({user, handleLogout,messages, connectedUsers,handleSend
                 <aside className="w-60 border-l p-4 bg-muted/40">
                     <h2 className="font-semibold mb-2">Online</h2>
                     <ScrollArea className="h-full space-y-2 flex gap-1">
-                        {connectedUsers.filter((usr)=>usr.idConnection !== user.idConnection).map((usr, i) => (
+                        {connectedUsers.filter((usr)=>usr.idConnection !== idConnection).map((usr, i) => (
                             <div key={i} className="p-2 rounded shadow-sm font-bold" style={{color: usr.color}}>
                                 {usr.name}
                             </div>

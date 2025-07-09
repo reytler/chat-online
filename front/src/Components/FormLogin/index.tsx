@@ -8,6 +8,7 @@ import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form'
 import { HexColorPicker } from "react-colorful"
+import { NotificationType, notify } from "../Notification"
 
 const schema = z.object({
   name: z.string().min(3, 'Nome obrigatório'),
@@ -21,7 +22,7 @@ type TPropsHomeLogin = {
     idConnection: string
 }
 
-export function HomeLogin({handleLogin,idConnection}:TPropsHomeLogin){
+export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
     const form = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -40,8 +41,7 @@ export function HomeLogin({handleLogin,idConnection}:TPropsHomeLogin){
         
             handleLogin(user)
         }else{
-            console.log('Falha ao encontrar id do socket: ',idConnection)
-            alert(`Falha ao encontrar id do socket: ${idConnection}`)
+            notify(`Falha ao encontrar id do socket: ${idConnection}`,NotificationType.ERROR)
         }
     }
 

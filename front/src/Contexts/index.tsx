@@ -1,21 +1,35 @@
-import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
-import { HomeLogin } from "./_HomeLogin";
+import { NotificationType, notify } from "@/Components/Notification";
+import { MessageDTO } from "@shared/dtos/MessageDTO";
 import { UserDTO } from "@shared/dtos/UserDTO";
 import { Events } from "@shared/enums/enumEvents";
-import { NotificationType, notify } from "../Notification";
-import { HomeView } from "../Home";
-import { MessageDTO } from "@shared/dtos/MessageDTO";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { io, Socket } from "socket.io-client";
 
-export default function HomeComponent(){
+interface IMainContext {
+    connectedUsers: UserDTO[]
+    handleLogout: ()=>void
+    user: UserDTO | null
+    messages: MessageDTO[]
+    handleSendMessage: (message: MessageDTO)=>void
+    handleLogin: (user: UserDTO)=>void
+}
+
+const MainContext = createContext<IMainContext | undefined>(undefined)
+
+export const MainProvider = ({children}:{children: ReactNode})=>{
+
     const [socket, setSocket] = useState<Socket | null>(null);
     const [user,setUser] = useState<UserDTO|null>(null);
     const [connectedUsers,setConnectedUsers] = useState<UserDTO[]>([]);
     const [messages,setMessages] = useState<MessageDTO[]>([]);
 
+    const navigate = useNavigate();
+
     function handleLogin(user: UserDTO){
         socket?.emit(Events.SETUSER,user)
         setUser(user)
+        navigate('/chat')
     }
 
     function handleSendMessage(message: MessageDTO){
@@ -23,6 +37,7 @@ export default function HomeComponent(){
     }
 
     function handleLogout(){
+        navigate('/')
         socket?.emit(Events.REMOVEUSER,user)
         setUser(null)
         socket?.disconnect()
@@ -33,7 +48,7 @@ export default function HomeComponent(){
         const socketIo = io("http://localhost:3001");
 
         socketIo.on("connect",()=>{
-            console.log(`Connected ${socketIo.id}`)
+            console.info(`Connected ${socketIo.id}`)
             setSocket(socketIo);
         });
 
@@ -74,33 +89,33 @@ export default function HomeComponent(){
         };
     },[socket])
 
-    if(socket === null){
-        return(
-            <>
-                <h1>Connecting...</h1>
-            </>
-        )
+    useEffect(()=>{
+        if(user === null){
+            navigate('/')
+        }
+    },[user])
+
+
+    return(
+        <MainContext.Provider value={{
+            connectedUsers,
+            handleLogout,
+            handleSendMessage,
+            messages,
+            user,
+            handleLogin
+        }}>
+            {children}
+        </MainContext.Provider>
+    )
+}
+
+export const useMain = (): IMainContext =>{
+    const context = useContext(MainContext);
+
+    if(!context){
+        throw new Error('useMain deve ser usado dentro de um MainProvider');
     }
 
-    if(socket !== null && user === null){
-        return(
-            <>
-                <HomeLogin handleLogin={handleLogin} idConnection={socket?.id as string}/>
-            </>
-        )
-    }
-
-    if(user !== null){
-        return(
-            <>
-                <HomeView 
-                    connectedUsers={connectedUsers} 
-                    handleLogout={handleLogout} 
-                    user={user} 
-                    messages={messages}
-                    handleSendMessage={handleSendMessage}
-                />
-            </>
-        )
-    }
+    return context
 }
