@@ -8,7 +8,7 @@ import { Textarea } from "../ui/textarea"
 import z from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "../ui/form"
 
 export type THomeProps = {
     connectedUsers: UserDTO[]
