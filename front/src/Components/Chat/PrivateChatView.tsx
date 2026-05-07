@@ -12,6 +12,7 @@ type PrivateChatViewProps = {
     onMarkRead: () => void
     onTypingChange: (isTyping: boolean) => void
     onDeleteMessage: (messageId: string) => void
+    onCloseRoom: () => void
 }
 
 function getMessageStatus(room: PrivateRoomDTO, currentUser: UserDTO, message: PrivateRoomDTO['messages'][number]) {
@@ -32,7 +33,7 @@ function getMessageStatus(room: PrivateRoomDTO, currentUser: UserDTO, message: P
     return 'Enviada'
 }
 
-export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, onTypingChange, onDeleteMessage }: PrivateChatViewProps) {
+export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, onTypingChange, onDeleteMessage, onCloseRoom }: PrivateChatViewProps) {
     const messagesViewportRef = useRef<HTMLDivElement | null>(null)
     const otherParticipant = room.participants.find((participant) => participant.userId !== currentUser.id)
     const typingParticipant = room.participants.find((participant) => participant.userId !== currentUser.id && room.activeTypingUserIds.includes(participant.userId))
@@ -51,10 +52,15 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
     return (
         <section className="flex h-full flex-col">
             <div className="border-b p-4">
-                <h2 className="text-lg font-semibold" style={{ color: otherParticipant?.color }}>{otherParticipant?.name ?? 'Chat privado'}</h2>
-                <p className="text-sm text-muted-foreground">
-                    {typingParticipant ? `${typingParticipant.name} esta digitando...` : 'Sala privada 1:1 ativa.'}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 className="text-lg font-semibold" style={{ color: otherParticipant?.color }}>{otherParticipant?.name ?? 'Chat privado'}</h2>
+                        <p className="text-sm text-muted-foreground">
+                            {typingParticipant ? `${typingParticipant.name} esta digitando...` : 'Sala privada 1:1 ativa.'}
+                        </p>
+                    </div>
+                    <Button variant="outline" onClick={onCloseRoom}>Encerrar sala</Button>
+                </div>
             </div>
 
             <ScrollArea className="flex-1 p-4" ref={messagesViewportRef}>

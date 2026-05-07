@@ -19,6 +19,7 @@ export function PrivateChatRoom() {
         markRoomRead,
         setTyping,
         deletePrivateMessage,
+        closeRoom,
     } = usePrivateChat()
 
     if (!user) {
@@ -51,6 +52,7 @@ export function PrivateChatRoom() {
                 onMarkRead={() => markRoomRead(room.id)}
                 onTypingChange={(isTyping) => setTyping(room.id, isTyping)}
                 onDeleteMessage={(messageId) => deletePrivateMessage(room.id, messageId)}
+                onCloseRoom={() => closeRoom(room.id)}
             />
         </ChatLayout>
     )

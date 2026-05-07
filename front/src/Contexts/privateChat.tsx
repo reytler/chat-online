@@ -4,7 +4,7 @@ import { PrivateRoomDTO } from '@shared/dtos/PrivateRoomDTO'
 import { PrivateStateDTO } from '@shared/dtos/PrivateStateDTO'
 import { Events } from '@shared/enums/enumEvents'
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from './session'
 
 type RoomOpenedPayload = {
@@ -24,6 +24,7 @@ type PrivateChatContextValue = {
     markRoomRead: (roomId: string) => void
     setTyping: (roomId: string, isTyping: boolean) => void
     deletePrivateMessage: (roomId: string, messageId: string) => void
+    closeRoom: (roomId: string) => void
     getRoomById: (roomId: string) => PrivateRoomDTO | null
 }
 
@@ -39,6 +40,7 @@ function upsertRoom(rooms: PrivateRoomDTO[], room: PrivateRoomDTO) {
 export function PrivateChatProvider({ children }: { children: ReactNode }) {
     const { socket, user } = useSession()
     const navigate = useNavigate()
+    const location = useLocation()
     const [privateState, setPrivateState] = useState<PrivateStateDTO>({ rooms: [], invites: [] })
     const [latestInviteLink, setLatestInviteLink] = useState<string | null>(null)
 
@@ -83,6 +85,10 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
         socket?.emit(Events.DELETE_PRIVATE_MESSAGE, { roomId, messageId })
     }
 
+    function closeRoom(roomId: string) {
+        socket?.emit(Events.CLOSE_PRIVATE_ROOM, { roomId })
+    }
+
     function getRoomById(roomId: string) {
         return privateState.rooms.find((room) => room.id === roomId) ?? null
     }
@@ -93,7 +99,15 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
         }
 
         function handlePrivateStateSync(nextState: PrivateStateDTO) {
+            const activePrivateRoomId = location.pathname.startsWith('/chat/private/')
+                ? location.pathname.replace('/chat/private/', '')
+                : null
+
             setPrivateState(nextState)
+
+            if (activePrivateRoomId && !nextState.rooms.some((room) => room.id === activePrivateRoomId)) {
+                navigate('/chat')
+            }
         }
 
         function handlePrivateInviteReceived(invite: PrivateInviteDTO) {
@@ -131,6 +145,17 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             }))
         }
 
+        function handlePrivateRoomClosed(closedRoom: PrivateRoomDTO) {
+            setPrivateState((currentState) => ({
+                ...currentState,
+                rooms: currentState.rooms.filter((room) => room.id !== closedRoom.id),
+            }))
+
+            if (location.pathname === `/chat/private/${closedRoom.id}`) {
+                navigate('/chat')
+            }
+        }
+
         function handlePrivateTypingUpdated(payload: { roomId: string, activeTypingUserIds: string[] }) {
             setPrivateState((currentState) => ({
                 ...currentState,
@@ -149,6 +174,7 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
         socket.on(Events.PRIVATE_LINK_CREATED, handlePrivateLinkCreated)
         socket.on(Events.PRIVATE_ROOM_OPENED, handlePrivateRoomOpened)
         socket.on(Events.PRIVATE_ROOM_UPDATED, handlePrivateRoomUpdated)
+        socket.on(Events.PRIVATE_ROOM_CLOSED, handlePrivateRoomClosed)
         socket.on(Events.PRIVATE_TYPING_UPDATED, handlePrivateTypingUpdated)
         socket.on(Events.PRIVATE_ACTION_ERROR, handlePrivateActionError)
 
@@ -158,10 +184,11 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             socket.off(Events.PRIVATE_LINK_CREATED, handlePrivateLinkCreated)
             socket.off(Events.PRIVATE_ROOM_OPENED, handlePrivateRoomOpened)
             socket.off(Events.PRIVATE_ROOM_UPDATED, handlePrivateRoomUpdated)
+            socket.off(Events.PRIVATE_ROOM_CLOSED, handlePrivateRoomClosed)
             socket.off(Events.PRIVATE_TYPING_UPDATED, handlePrivateTypingUpdated)
             socket.off(Events.PRIVATE_ACTION_ERROR, handlePrivateActionError)
         }
-    }, [navigate, socket, user])
+    }, [location.pathname, navigate, socket, user])
 
     useEffect(() => {
         if (user) {
@@ -185,6 +212,7 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             markRoomRead,
             setTyping,
             deletePrivateMessage,
+            closeRoom,
             getRoomById,
         }}>
             {children}
