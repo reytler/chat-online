@@ -1,4 +1,5 @@
-import { ToastContainer, ToastContent, ToastOptions, toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export enum NotificationType {
     ERROR = 'ERROR',
@@ -23,7 +24,7 @@ export function notify(message: string, type: NotificationType){
     }
 }
 
-export function NotifyHeader(){
+export function NotificationContainer(){
     return(
         <>
             <ToastContainer/>
