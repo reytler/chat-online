@@ -32,6 +32,16 @@ export function PrivateSidebar({
     const directInvites = invites.filter((invite) => invite.type === 'direct')
     const onlineUsers = connectedUsers.filter((connectedUser) => connectedUser.id !== currentUser.id)
 
+    function hasOpenRoomWithUser(targetUserId: string) {
+        return rooms.some((room) => room.lifecycle === 'open' && room.participants.some((participant) => participant.userId === currentUser.id) && room.participants.some((participant) => participant.userId === targetUserId))
+    }
+
+    function hasPendingDirectInviteWithUser(targetUserId: string) {
+        return directInvites.some((invite) => invite.status === 'pending'
+            && ((invite.createdByUserId === currentUser.id && invite.targetUserId === targetUserId)
+                || (invite.createdByUserId === targetUserId && invite.targetUserId === currentUser.id)))
+    }
+
     return (
         <aside className="flex w-full max-w-sm flex-col border-l bg-muted/30 md:w-96">
             <div className="space-y-3 border-b p-4">
@@ -60,7 +70,9 @@ export function PrivateSidebar({
                                     <p className="font-medium" style={{ color: connectedUser.color }}>{connectedUser.name}</p>
                                     <p className="text-xs text-muted-foreground">Convite direto</p>
                                 </div>
-                                <Button size="sm" onClick={() => onCreateInvite(connectedUser.id)}>Convidar</Button>
+                                {hasOpenRoomWithUser(connectedUser.id) || hasPendingDirectInviteWithUser(connectedUser.id)
+                                    ? <p className="text-xs text-muted-foreground">Indisponivel</p>
+                                    : <Button size="sm" onClick={() => onCreateInvite(connectedUser.id)}>Convidar</Button>}
                             </div>
                         )) : <p className="text-sm text-muted-foreground">Nenhum outro usuario online.</p>}
                     </section>
