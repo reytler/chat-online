@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Front: Vite (Chrome)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/front",
+      "preLaunchTask": "front: dev"
+    },
+    {
+      "name": "API: Node (ts-node-dev)",
+      "type": "pwa-node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "preLaunchTask": "api: dev:debug",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Chat Online: Front + API",
+      "configurations": ["Front: Vite (Chrome)", "API: Node (ts-node-dev)"]
+    }
+  ]
+}

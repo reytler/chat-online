@@ -1,7 +1,18 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Chat } from './pages/Chat';
 import { Login } from './pages/Login';
-import { MainProvider } from './Contexts';
+import { MainProvider, useMain } from './Contexts';
+import { NotificationContainer } from './Components/Notification';
+
+function ProtectedChatRoute() {
+  const { user } = useMain();
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Chat />;
+}
 
 function App() {
   
@@ -9,8 +20,9 @@ function App() {
   return (
     <BrowserRouter>
       <MainProvider>
+        <NotificationContainer />
         <Routes>
-          <Route path="/chat" element={<Chat/>} />
+          <Route path="/chat" element={<ProtectedChatRoute/>} />
           <Route path="/" element={<Login/>} />
         </Routes>
       </MainProvider>

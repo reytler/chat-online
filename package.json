@@ -1,0 +1,11 @@
+{
+  "name": "chat-online",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm --prefix api run dev\" \"npm --prefix front run dev\"",
+    "install:all": "npm install --prefix api && npm install --prefix front"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

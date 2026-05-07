@@ -18,7 +18,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 type TPropsHomeLogin = {
-    handleLogin: (user: UserDTO)=>void
+    handleLogin: (user: Omit<UserDTO, 'idConnection'>)=>void
     idConnection: string
 }
 
@@ -32,16 +32,15 @@ export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
     })
 
     function onSubmit(data: FormData){
-        if(idConnection !== undefined){
-            const user: UserDTO = {
+        if(idConnection){
+            const user: Omit<UserDTO, 'idConnection'> = {
                 color: data.color,
                 name: data.name,
-                idConnection: idConnection
             }
         
             handleLogin(user)
         }else{
-            notify(`Falha ao encontrar id do socket: ${idConnection}`,NotificationType.ERROR)
+            notify('Falha ao conectar no chat. Aguarde a conexao e tente novamente.',NotificationType.ERROR)
         }
     }
 
@@ -75,7 +74,7 @@ export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Entrar</Button>
+                <Button type="submit" disabled={!idConnection}>Entrar</Button>
             </form>
         </Form>
     )

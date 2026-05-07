@@ -24,6 +24,7 @@ app.get("/", (req: Request, res:Response)=>{
 
 io.on('connection',(socket)=>{
     console.log(`A host conected ${socket.id}`);
+    let currentUser: UserDTO | null = null;
 
     socket.on(Events.SENDMESSAGE, (msg: MessageDTO)=>{
         const message = new Message(msg.content,msg.idConnection,msg.userName)
@@ -33,6 +34,7 @@ io.on('connection',(socket)=>{
     })
 
     socket.on(Events.SETUSER,(user: UserDTO)=>{
+        currentUser = user
         const newUser = new User(user.name,user.color,user.idConnection)
         newUser.createUser(newUser)
         socket.broadcast.emit(Events.NEWUSER,user)
@@ -41,10 +43,20 @@ io.on('connection',(socket)=>{
     })
 
     socket.on(Events.REMOVEUSER,(user: UserDTO)=>{
+        currentUser = null
         User.removeUser(user)
         socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
         socket.emit(Events.UPDATEUSERLIST, User.returnUsersDTO());
         socket.broadcast.emit(Events.OFFUSER,user)
+    })
+
+    socket.on('disconnect',()=>{
+        if (!currentUser) return;
+
+        User.removeUser(currentUser)
+        socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
+        socket.broadcast.emit(Events.OFFUSER,currentUser)
+        currentUser = null
     })
 });
 
