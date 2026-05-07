@@ -1,65 +1,43 @@
-import express , { Request, Response } from "express";
-import { createServer } from "node:http";
-import { Server } from "socket.io";
-import { MessageDTO } from "@shared/dtos/MessageDTO"
-import { UserDTO } from "@shared/dtos/UserDTO"
-import { Events } from "@shared/enums/enumEvents"
-import { Message } from "./ManageUsers/Message";
-import { User } from "./ManageUsers/User";
-const app = express();
+import express, { Request, Response } from 'express'
+import { createServer } from 'node:http'
+import { Server } from 'socket.io'
+import { registerSocketHandlers } from './socket/registerSocketHandlers'
+import { PrivateChatStore } from './stores/PrivateChatStore'
+import { PublicMessageStore } from './stores/PublicMessageStore'
+import { UserStore } from './stores/UserStore'
+
+const app = express()
 const server = createServer(app)
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000",
-        methods: ["GET","POST"]
+        origin: '*',
+        methods: ['GET', 'POST']
     }
 })
 const port = process.env.PORT || 3001
 
-app.use(express.json());
+const userStore = new UserStore()
+const publicMessageStore = new PublicMessageStore()
+const privateChatStore = new PrivateChatStore()
 
-app.get("/", (req: Request, res:Response)=>{
-    res.send("Hello Express")
-});
+app.use(express.json())
 
-io.on('connection',(socket)=>{
-    console.log(`A host conected ${socket.id}`);
-    let currentUser: UserDTO | null = null;
+app.get('/', (_req: Request, res: Response) => {
+    res.send('Hello Express')
+})
 
-    socket.on(Events.SENDMESSAGE, (msg: MessageDTO)=>{
-        const message = new Message(msg.content,msg.idConnection,msg.userName)
-        message.createMessage(message)
-        socket.broadcast.emit(Events.NEWMESSAGE, Message.returnMessagesDTO())
-        socket.emit(Events.NEWMESSAGE, Message.returnMessagesDTO());
+io.on('connection', (socket) => {
+    console.log(`A host conected ${socket.id}`)
+
+    registerSocketHandlers({
+        io,
+        socket,
+        userStore,
+        publicMessageStore,
+        privateChatStore,
     })
+})
 
-    socket.on(Events.SETUSER,(user: UserDTO)=>{
-        currentUser = user
-        const newUser = new User(user.name,user.color,user.idConnection)
-        newUser.createUser(newUser)
-        socket.broadcast.emit(Events.NEWUSER,user)
-        socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
-        socket.emit(Events.UPDATEUSERLIST, User.returnUsersDTO());
-    })
-
-    socket.on(Events.REMOVEUSER,(user: UserDTO)=>{
-        currentUser = null
-        User.removeUser(user)
-        socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
-        socket.emit(Events.UPDATEUSERLIST, User.returnUsersDTO());
-        socket.broadcast.emit(Events.OFFUSER,user)
-    })
-
-    socket.on('disconnect',()=>{
-        if (!currentUser) return;
-
-        User.removeUser(currentUser)
-        socket.broadcast.emit(Events.UPDATEUSERLIST,User.returnUsersDTO())
-        socket.broadcast.emit(Events.OFFUSER,currentUser)
-        currentUser = null
-    })
-});
-
-server.listen(port,()=>{
+server.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`)
-});
+})

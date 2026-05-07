@@ -1,5 +1,5 @@
-export type UserDTO = {
-    id: string
+export type PrivateParticipantDTO = {
+    userId: string
     name: string
     color: string
     idConnection: string

@@ -18,11 +18,22 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 type TPropsHomeLogin = {
-    handleLogin: (user: Omit<UserDTO, 'idConnection'>)=>void
+    handleLogin: (user: Omit<UserDTO, 'idConnection' | 'id'>, options?: { redirectTo?: string })=>void
     idConnection: string
+    redirectTo?: string
+    submitLabel?: string
+    title?: string
+    description?: string
 }
 
-export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
+export function FormLogin({
+    handleLogin,
+    idConnection,
+    redirectTo,
+    submitLabel = 'Entrar',
+    title = 'Entrar no chat',
+    description = 'Escolha seu apelido e a cor para participar.',
+}:TPropsHomeLogin){
     const form = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -33,12 +44,12 @@ export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
 
     function onSubmit(data: FormData){
         if(idConnection){
-            const user: Omit<UserDTO, 'idConnection'> = {
+            const user: Omit<UserDTO, 'idConnection' | 'id'> = {
                 color: data.color,
                 name: data.name,
             }
         
-            handleLogin(user)
+            handleLogin(user, { redirectTo })
         }else{
             notify('Falha ao conectar no chat. Aguarde a conexao e tente novamente.',NotificationType.ERROR)
         }
@@ -46,7 +57,11 @@ export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
 
     return(
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col justify-center items-center gap-5 mt-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto mt-10 flex w-full max-w-md flex-col items-center gap-5 rounded-xl border bg-card p-6 shadow-sm">
+                <div className="space-y-1 text-center">
+                    <h1 className="text-2xl font-semibold">{title}</h1>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
                 <FormField
                     control={form.control}
                     name="name"
@@ -74,7 +89,7 @@ export function FormLogin({handleLogin,idConnection}:TPropsHomeLogin){
                         </FormItem>
                     )}
                 />
-                <Button type="submit" disabled={!idConnection}>Entrar</Button>
+                <Button type="submit" disabled={!idConnection}>{submitLabel}</Button>
             </form>
         </Form>
     )
