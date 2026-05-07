@@ -23,8 +23,20 @@ export class PrivateChatStore {
     private rooms = new Map<string, PrivateRoomRecord>()
     private invites = new Map<string, PrivateInviteDTO>()
 
+    private findRoomBetweenUsers(userId: string, targetUserId: string) {
+        return [...this.rooms.values()].find((room) => {
+            if (room.participants.length !== 2) {
+                return false
+            }
+
+            const participantIds = room.participants.map((participant) => participant.userId)
+
+            return participantIds.includes(userId) && participantIds.includes(targetUserId)
+        })
+    }
+
     public getStateForUser(userId: string): PrivateStateDTO {
-        const rooms = [...this.rooms.values()].filter((room) => room.participants.some((participant) => participant.userId === userId))
+        const rooms = [...this.rooms.values()].filter((room) => room.lifecycle === 'open' && room.participants.some((participant) => participant.userId === userId))
         const invites = [...this.invites.values()].filter((invite) => {
             if (invite.status !== 'pending') {
                 return false
@@ -110,11 +122,24 @@ export class PrivateChatStore {
     }
 
     public createRoom(participants: UserDTO[]) {
+        const existingRoom = this.findRoomBetweenUsers(participants[0].id, participants[1].id)
+
+        if (existingRoom) {
+            existingRoom.lifecycle = 'open'
+            existingRoom.closedAt = null
+            existingRoom.activeTypingUserIds = []
+            existingRoom.participants = participants.map(toParticipant)
+
+            return clone(existingRoom)
+        }
+
         const room: PrivateRoomRecord = {
             id: randomUUID(),
             participants: participants.map(toParticipant),
             messages: [],
             createdAt: new Date().toISOString(),
+            lifecycle: 'open',
+            closedAt: null,
             activeTypingUserIds: [],
         }
 
@@ -127,6 +152,12 @@ export class PrivateChatStore {
         const room = this.rooms.get(roomId)
 
         return room ? clone(room) : null
+    }
+
+    public hasOpenRoomBetween(userId: string, targetUserId: string) {
+        const room = this.findRoomBetweenUsers(userId, targetUserId)
+
+        return room?.lifecycle === 'open'
     }
 
     public syncParticipants(roomId: string, users: UserDTO[]) {
@@ -184,7 +215,7 @@ export class PrivateChatStore {
     public addMessage(roomId: string, sender: UserDTO, content: string) {
         const room = this.rooms.get(roomId)
 
-        if (!room) {
+        if (!room || room.lifecycle !== 'open') {
             return null
         }
 
@@ -210,7 +241,7 @@ export class PrivateChatStore {
     public setTyping(roomId: string, userId: string, isTyping: boolean) {
         const room = this.rooms.get(roomId)
 
-        if (!room) {
+        if (!room || room.lifecycle !== 'open') {
             return null
         }
 
@@ -236,6 +267,20 @@ export class PrivateChatStore {
 
         message.content = ''
         message.deletedAt = new Date().toISOString()
+
+        return clone(room)
+    }
+
+    public closeRoom(roomId: string, userId: string) {
+        const room = this.rooms.get(roomId)
+
+        if (!room || room.lifecycle !== 'open' || !room.participants.some((participant) => participant.userId === userId)) {
+            return null
+        }
+
+        room.lifecycle = 'closed'
+        room.closedAt = new Date().toISOString()
+        room.activeTypingUserIds = []
 
         return clone(room)
     }

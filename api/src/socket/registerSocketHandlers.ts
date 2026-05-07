@@ -36,6 +36,10 @@ function emitPrivateRoom(io: Server, room: PrivateRoomDTO) {
     io.to(room.id).emit(Events.PRIVATE_ROOM_UPDATED, room)
 }
 
+function emitPrivateRoomClosed(io: Server, room: PrivateRoomDTO) {
+    io.to(room.id).emit(Events.PRIVATE_ROOM_CLOSED, room)
+}
+
 function emitPrivateInvite(socket: Socket, invite: PrivateInviteDTO) {
     socket.emit(Events.PRIVATE_INVITE_RECEIVED, invite)
 }
@@ -98,6 +102,11 @@ export function registerSocketHandlers({ io, socket, userStore, publicMessageSto
 
         if (privateChatStore.hasPendingDirectInviteBetween(currentUser.id, targetUserId)) {
             emitPrivateActionError(socket, 'Ja existe um convite privado pendente entre esses usuarios.')
+            return
+        }
+
+        if (privateChatStore.hasOpenRoomBetween(currentUser.id, targetUserId)) {
+            emitPrivateActionError(socket, 'Ja existe uma sala privada aberta entre esses usuarios.')
             return
         }
 
@@ -215,6 +224,32 @@ export function registerSocketHandlers({ io, socket, userStore, publicMessageSto
         }
     })
 
+    socket.on(Events.CLOSE_PRIVATE_ROOM, ({ roomId }: { roomId: string }) => {
+        if (!currentUser) {
+            emitPrivateActionError(socket, 'Voce precisa estar conectado para encerrar a sala privada.')
+            return
+        }
+
+        const room = privateChatStore.closeRoom(roomId, currentUser.id)
+
+        if (!room) {
+            emitPrivateActionError(socket, 'Sala privada invalida ou ja encerrada.')
+            return
+        }
+
+        emitPrivateRoomClosed(io, room)
+
+        for (const participant of room.participants) {
+            const participantSocket = io.sockets.sockets.get(participant.idConnection)
+            participantSocket?.leave(room.id)
+
+            const participantUser = userStore.getById(participant.userId)
+            if (participantSocket && participantUser) {
+                emitPrivateState(participantSocket, participantUser, privateChatStore, userStore)
+            }
+        }
+    })
+
     socket.on(Events.SEND_PRIVATE_MESSAGE, ({ roomId, content }: { roomId: string, content: string }) => {
         if (!currentUser) {
             emitPrivateActionError(socket, 'Voce precisa estar conectado para enviar mensagem privada.')
@@ -225,7 +260,7 @@ export function registerSocketHandlers({ io, socket, userStore, publicMessageSto
 
         const room = privateChatStore.getRoomById(roomId)
 
-        if (!room || !room.participants.some((participant) => participant.userId === authenticatedUser.id)) {
+        if (!room || room.lifecycle !== 'open' || !room.participants.some((participant) => participant.userId === authenticatedUser.id)) {
             emitPrivateActionError(socket, 'Sala privada invalida.')
             return
         }
@@ -262,7 +297,7 @@ export function registerSocketHandlers({ io, socket, userStore, publicMessageSto
 
         const room = privateChatStore.getRoomById(roomId)
 
-        if (!room || !room.participants.some((participant) => participant.userId === authenticatedUser.id)) {
+        if (!room || room.lifecycle !== 'open' || !room.participants.some((participant) => participant.userId === authenticatedUser.id)) {
             return
         }
 
@@ -285,7 +320,7 @@ export function registerSocketHandlers({ io, socket, userStore, publicMessageSto
 
         const room = privateChatStore.getRoomById(roomId)
 
-        if (!room || !room.participants.some((participant) => participant.userId === authenticatedUser.id)) {
+        if (!room || room.lifecycle !== 'open' || !room.participants.some((participant) => participant.userId === authenticatedUser.id)) {
             return
         }
 
