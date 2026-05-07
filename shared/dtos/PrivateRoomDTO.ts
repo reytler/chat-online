@@ -6,5 +6,7 @@ export type PrivateRoomDTO = {
     participants: PrivateParticipantDTO[]
     messages: PrivateMessageDTO[]
     createdAt: string
+    lifecycle: 'open' | 'closed'
+    closedAt: string | null
     activeTypingUserIds: string[]
 }
