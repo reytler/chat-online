@@ -63,8 +63,8 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
                 </div>
             </div>
 
-            <ScrollArea className="min-h-0 flex-1 p-4" ref={messagesViewportRef}>
-                <div className="space-y-3">
+            <ScrollArea className="min-h-0 flex-1" ref={messagesViewportRef}>
+                <div className="space-y-3 p-4">
                     {room.messages.map((message) => {
                         const isOwnMessage = message.senderId === currentUser.id
                         const messageStatus = getMessageStatus(room, currentUser, message)
