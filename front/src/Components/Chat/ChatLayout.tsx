@@ -34,8 +34,8 @@ export function ChatLayout({
     children,
 }: ChatLayoutProps) {
     return (
-        <div className="flex min-h-screen flex-col">
-            <header className="flex items-center justify-between gap-4 border-b bg-background p-4">
+        <div className="flex h-dvh min-h-0 flex-col overflow-hidden">
+            <header className="flex shrink-0 items-center justify-between gap-4 border-b bg-background p-4">
                 <div>
                     <p className="text-sm text-muted-foreground">Ola, {user.name}</p>
                     <Link to="/chat" className="text-lg font-semibold">Voltar para a sala publica</Link>
@@ -43,8 +43,8 @@ export function ChatLayout({
                 <Button onClick={onLogout}>Sair</Button>
             </header>
 
-            <div className="flex flex-1 flex-col md:flex-row">
-                <main className="min-h-[55vh] flex-1">{children}</main>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+                <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</main>
                 <PrivateSidebar
                     currentUser={user}
                     connectedUsers={connectedUsers}
