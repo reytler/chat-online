@@ -50,8 +50,8 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
     }, [onMarkRead, room.messages])
 
     return (
-        <section className="flex h-full flex-col">
-            <div className="border-b p-4">
+        <section className="flex h-full min-h-0 flex-col overflow-hidden">
+            <div className="shrink-0 border-b p-4">
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-semibold" style={{ color: otherParticipant?.color }}>{otherParticipant?.name ?? 'Chat privado'}</h2>
@@ -63,7 +63,7 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
                 </div>
             </div>
 
-            <ScrollArea className="flex-1 p-4" ref={messagesViewportRef}>
+            <ScrollArea className="min-h-0 flex-1 p-4" ref={messagesViewportRef}>
                 <div className="space-y-3">
                     {room.messages.map((message) => {
                         const isOwnMessage = message.senderId === currentUser.id

@@ -25,12 +25,12 @@ export function PublicChatView({ user, messages, connectedUsers, onSendMessage }
     }, [messages])
 
     return (
-        <section className="flex h-full flex-col">
-            <div className="border-b p-4">
+        <section className="flex h-full min-h-0 flex-col overflow-hidden">
+            <div className="shrink-0 border-b p-4">
                 <h2 className="text-lg font-semibold">Sala publica</h2>
                 <p className="text-sm text-muted-foreground">Conectado como {user.name}.</p>
             </div>
-            <ScrollArea className="flex-1 p-4" ref={messagesViewportRef}>
+            <ScrollArea className="min-h-0 flex-1 p-4" ref={messagesViewportRef}>
                 <div className="space-y-3">
                     {messages.map((message, index) => (
                         <div key={`${message.idConnection}-${index}-${message.content}`} className="rounded-xl bg-muted p-3">
