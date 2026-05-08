@@ -3,6 +3,7 @@ import { createServer } from 'node:http'
 import { monitorEventLoopDelay } from 'node:perf_hooks'
 import { Server } from 'socket.io'
 import { createObservabilityConfig } from './observability/createObservabilityConfig'
+import { createHttpErrorMiddleware } from './observability/createHttpErrorMiddleware'
 import { createHttpObservabilityMiddleware } from './observability/createHttpObservabilityMiddleware'
 import { initSentry } from './observability/sentry/initSentry'
 import { ObservabilityService } from './observability/ObservabilityService'
@@ -117,6 +118,8 @@ app.use(createHttpObservabilityMiddleware(observability))
 app.get('/', (_req: Request, res: Response) => {
     res.send('Hello Express')
 })
+
+app.use(createHttpErrorMiddleware(observability))
 
 io.on('connection', (socket) => {
     observability.increment('socket.connection.opened_total', 1)
