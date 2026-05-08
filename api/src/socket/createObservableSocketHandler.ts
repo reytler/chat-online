@@ -35,10 +35,14 @@ export function createObservableSocketHandler<TArgs extends unknown[]>({
         const baseContext = {
             socketId: socket.id,
             correlationId: payloadMeta?.correlationId,
+            interactionId: payloadMeta?.interactionId,
+            traceId: payloadMeta?.traceId,
             sessionId: payloadMeta?.sessionId,
             source: payloadMeta?.source,
             screen: payloadMeta?.screen,
             roomId: payloadMeta?.roomId,
+            route: payloadMeta?.route,
+            feature: payloadMeta?.feature,
         }
         const eventContext = getContext?.(...args)
         const context = {
@@ -47,6 +51,10 @@ export function createObservableSocketHandler<TArgs extends unknown[]>({
         }
 
         observability.increment('socket.event.received_total', 1, { eventName })
+        observability.debug('socket.event.received', {
+            eventName,
+            ...context,
+        })
 
         try {
             handler(...args)
@@ -58,7 +66,8 @@ export function createObservableSocketHandler<TArgs extends unknown[]>({
             })
         } catch (error) {
             observability.increment('socket.event.failed_total', 1, { eventName })
-            observability.captureError('socket.event.failed', error, {
+            observability.timing('socket.event.duration_ms', Date.now() - startedAt, { eventName, status: 'failed' })
+            observability.captureError('socket.handler.error', error, {
                 eventName,
                 ...context,
             })
