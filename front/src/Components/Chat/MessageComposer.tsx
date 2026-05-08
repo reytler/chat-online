@@ -14,7 +14,7 @@ type FormData = z.infer<typeof schema>
 
 type MessageComposerProps = {
     placeholder: string
-    onSubmit: (content: string) => void
+    onSubmit: (content: string) => boolean
     onTypingChange?: (isTyping: boolean) => void
 }
 
@@ -65,7 +65,12 @@ export function MessageComposer({ placeholder, onSubmit, onTypingChange }: Messa
             return
         }
 
-        onSubmit(trimmedContent)
+        const didSubmit = onSubmit(trimmedContent)
+
+        if (!didSubmit) {
+            return
+        }
+
         onTypingChange?.(false)
         form.resetField('content')
     }

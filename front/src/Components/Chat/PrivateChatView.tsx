@@ -8,11 +8,11 @@ import { useEffect, useRef } from 'react'
 type PrivateChatViewProps = {
     room: PrivateRoomDTO
     currentUser: UserDTO
-    onSendMessage: (content: string) => void
+    onSendMessage: (content: string) => boolean
     onMarkRead: () => void
     onTypingChange: (isTyping: boolean) => void
-    onDeleteMessage: (messageId: string) => void
-    onCloseRoom: () => void
+    onDeleteMessage: (messageId: string) => boolean
+    onCloseRoom: () => boolean
 }
 
 function getMessageStatus(room: PrivateRoomDTO, currentUser: UserDTO, message: PrivateRoomDTO['messages'][number]) {

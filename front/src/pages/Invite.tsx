@@ -6,7 +6,7 @@ import { Navigate, useParams } from 'react-router-dom'
 
 export function Invite() {
     const { token = '' } = useParams()
-    const { user, handleLogin, socketId } = useSession()
+    const { user, handleLogin, isSocketReady } = useSession()
     const { joinPrivateRoomByToken } = usePrivateChat()
     const [hasJoined, setHasJoined] = useState(false)
 
@@ -15,8 +15,11 @@ export function Invite() {
             return
         }
 
-        joinPrivateRoomByToken(token)
-        setHasJoined(true)
+        const didDispatch = joinPrivateRoomByToken(token)
+
+        if (didDispatch) {
+            setHasJoined(true)
+        }
     }, [hasJoined, joinPrivateRoomByToken, token, user])
 
     if (!token) {
@@ -27,7 +30,7 @@ export function Invite() {
         return (
             <FormLogin
                 handleLogin={handleLogin}
-                idConnection={socketId}
+                isSocketReady={isSocketReady}
                 redirectTo={`/invite/${token}`}
                 submitLabel="Entrar na sala privada"
                 title="Convite para chat privado"
