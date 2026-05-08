@@ -1,6 +1,5 @@
-import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useObservability } from './index'
+import { useScreenTracking } from './useScreenTracking'
 
 function getScreenName(pathname: string) {
     if (pathname === '/') {
@@ -24,13 +23,15 @@ function getScreenName(pathname: string) {
 
 export function RouteChangeTracker() {
     const location = useLocation()
-    const { trackScreen } = useObservability()
+    const screenName = getScreenName(location.pathname)
 
-    useEffect(() => {
-        trackScreen(getScreenName(location.pathname), {
+    useScreenTracking({
+        screenName,
+        context: {
             pathname: location.pathname,
-        })
-    }, [location.pathname, trackScreen])
+            route: location.pathname,
+        },
+    })
 
     return null
 }

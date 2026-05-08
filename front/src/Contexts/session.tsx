@@ -1,5 +1,6 @@
 import { NotificationType, notify } from '@/Components/Notification'
 import { useObservability } from '@/observability'
+import { useSocketTracking } from '@/observability/useSocketTracking'
 import { UserDTO } from '@shared/dtos/UserDTO'
 import { Events } from '@shared/enums/enumEvents'
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
@@ -49,6 +50,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserDTO | null>(() => readStoredUser())
     const navigate = useNavigate()
     const { captureError, increment, trackEvent } = useObservability()
+
+    useSocketTracking({
+        socket,
+        userId: user?.id,
+    })
 
     function handleLogin(userData: LoginInput, options?: { redirectTo?: string }) {
         if (!socket?.connected || !socket.id) {
