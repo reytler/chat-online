@@ -6,6 +6,7 @@ export type ObservabilityContextValue = {
     captureError: (event: string, error: unknown, context?: ObservabilityAttributes) => void
     createInteractionMeta: (context?: Partial<ObservabilityMetaDTO>) => ObservabilityMetaDTO
     increment: (name: string, value?: number, tags?: ObservabilityAttributes) => void
+    timing: (name: string, value: number, tags?: ObservabilityAttributes) => void
     trackEvent: (event: string, context?: ObservabilityAttributes, level?: ObservabilityLevel) => void
     trackScreen: (screen: string, context?: ObservabilityAttributes) => void
 }

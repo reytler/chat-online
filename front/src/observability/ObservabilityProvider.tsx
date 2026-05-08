@@ -86,6 +86,18 @@ export function ObservabilityProvider({ children, config = createObservabilityCo
         })
     }, [forEachAdapter, withBaseContext])
 
+    const timing = useCallback((name: string, value: number, tags?: ObservabilityAttributes) => {
+        forEachAdapter((adapter) => {
+            adapter.metric({
+                name,
+                value,
+                timestamp: new Date().toISOString(),
+                unit: 'ms',
+                tags: withBaseContext(tags),
+            })
+        })
+    }, [forEachAdapter, withBaseContext])
+
     const trackEvent = useCallback((event: string, context?: ObservabilityAttributes, level: ObservabilityLevel = 'info') => {
         writeLog(level, event, context)
     }, [writeLog])
@@ -140,6 +152,7 @@ export function ObservabilityProvider({ children, config = createObservabilityCo
             captureError,
             createInteractionMeta,
             increment,
+            timing,
             trackEvent,
             trackScreen,
         }}>

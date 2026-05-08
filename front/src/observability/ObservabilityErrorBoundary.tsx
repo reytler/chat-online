@@ -4,6 +4,7 @@ import { useObservability } from './index'
 type ErrorBoundaryProps = {
     children: ReactNode
     onError: (error: Error, errorInfo: ErrorInfo) => void
+    screenName?: string
 }
 
 type ErrorBoundaryState = {
@@ -44,9 +45,15 @@ export function ObservabilityErrorBoundary({ children }: { children: ReactNode }
 
     return (
         <ErrorBoundary
+            screenName={window.location.pathname}
             onError={(error, errorInfo) => {
                 captureError('ui.error_boundary.caught', error, {
                     componentStack: errorInfo.componentStack,
+                    environment: import.meta.env.MODE,
+                    isOnline: navigator.onLine,
+                    pathname: window.location.pathname,
+                    screenName: window.location.pathname,
+                    userAgent: navigator.userAgent,
                 })
             }}
         >

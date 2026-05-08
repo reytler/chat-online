@@ -8,7 +8,7 @@ type UseSocketTrackingParams = {
 }
 
 export function useSocketTracking({ socket, userId }: UseSocketTrackingParams) {
-    const { captureError, increment, trackEvent } = useObservability()
+    const { captureError, increment, timing, trackEvent } = useObservability()
     const connectStartedAtRef = useRef(Date.now())
     const disconnectedAtRef = useRef<number | null>(null)
 
@@ -30,7 +30,7 @@ export function useSocketTracking({ socket, userId }: UseSocketTrackingParams) {
                 ? undefined
                 : Date.now() - disconnectedAtRef.current
 
-            increment('client.socket.connection.duration_ms', connectionDurationMs, { userId })
+            timing('client.socket.connection.duration_ms', connectionDurationMs, { userId })
             trackEvent(wasReconnect ? 'client.socket.reconnected' : 'client.socket.connected', {
                 socketId: socket.id,
                 userId,
@@ -89,5 +89,5 @@ export function useSocketTracking({ socket, userId }: UseSocketTrackingParams) {
             socket.io.off('reconnect_attempt', handleReconnectAttempt)
             socket.io.off('reconnect', handleReconnect)
         }
-    }, [captureError, increment, socket, trackEvent, userId])
+    }, [captureError, increment, socket, timing, trackEvent, userId])
 }

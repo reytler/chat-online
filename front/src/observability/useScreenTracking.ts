@@ -8,7 +8,7 @@ type UseScreenTrackingParams = {
 }
 
 export function useScreenTracking({ screenName, context }: UseScreenTrackingParams) {
-    const { increment, trackEvent, trackScreen } = useObservability()
+    const { timing, trackEvent, trackScreen } = useObservability()
     const enteredAtRef = useRef(Date.now())
 
     useEffect(() => {
@@ -23,11 +23,11 @@ export function useScreenTracking({ screenName, context }: UseScreenTrackingPara
                 ...context,
             }
 
-            increment('client.screen.time_spent_ms', timeSpentMs, {
+            timing('client.screen.time_spent_ms', timeSpentMs, {
                 screen: screenName,
                 ...context,
             })
             trackEvent('ui.screen.left', leftContext)
         }
-    }, [context, increment, screenName, trackEvent, trackScreen])
+    }, [context, screenName, timing, trackEvent, trackScreen])
 }

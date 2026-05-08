@@ -4,13 +4,22 @@ import { PrivateInviteDTO } from '@shared/dtos/PrivateInviteDTO'
 import { PrivateRoomDTO } from '@shared/dtos/PrivateRoomDTO'
 import { PrivateStateDTO } from '@shared/dtos/PrivateStateDTO'
 import { Events } from '@shared/enums/enumEvents'
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from './session'
 
 type RoomOpenedPayload = {
     room: PrivateRoomDTO
     shouldNavigate: boolean
+}
+
+type PrivateActionErrorPayload = {
+    message: string
+    meta?: {
+        correlationId?: string
+        interactionId?: string
+        roomId?: string
+    }
 }
 
 type PrivateChatContextValue = {
@@ -44,7 +53,8 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
     const location = useLocation()
     const [privateState, setPrivateState] = useState<PrivateStateDTO>({ rooms: [], invites: [] })
     const [latestInviteLink, setLatestInviteLink] = useState<string | null>(null)
-    const { captureError, createInteractionMeta, increment, trackEvent } = useObservability()
+    const { captureError, createInteractionMeta, increment, timing, trackEvent } = useObservability()
+    const pendingMessagesRef = useRef(new Map<string, { startedAt: number, roomId: string }>())
 
     function createPrivateInvite(targetUserId: string) {
         if (!socket) {
@@ -52,9 +62,18 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             return
         }
 
-        socket?.emit(Events.CREATE_PRIVATE_INVITE, { targetUserId })
+        const meta = createInteractionMeta({
+            feature: 'private-chat',
+            route: location.pathname,
+            socketId: socket.id,
+        })
+
+        socket?.emit(Events.CREATE_PRIVATE_INVITE, { targetUserId, meta })
         increment('chat.private.invite_create_total')
-        trackEvent('chat.private.invite_create_requested', { targetUserId })
+        trackEvent('chat.private.invite_create_requested', {
+            targetUserId,
+            correlationId: meta.correlationId,
+        })
     }
 
     function createPrivateLinkInvite() {
@@ -63,9 +82,17 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             return
         }
 
-        socket?.emit(Events.CREATE_PRIVATE_LINK_INVITE)
+        const meta = createInteractionMeta({
+            feature: 'private-chat',
+            route: location.pathname,
+            socketId: socket.id,
+        })
+
+        socket?.emit(Events.CREATE_PRIVATE_LINK_INVITE, { meta })
         increment('chat.private.link_invite_create_total')
-        trackEvent('chat.private.link_invite_requested')
+        trackEvent('chat.private.link_invite_requested', {
+            correlationId: meta.correlationId,
+        })
     }
 
     function respondToInvite(inviteId: string, accepted: boolean) {
@@ -74,8 +101,18 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             return
         }
 
-        socket?.emit(Events.RESPOND_PRIVATE_INVITE, { inviteId, accepted })
-        trackEvent('chat.private.invite_response_requested', { inviteId, accepted })
+        const meta = createInteractionMeta({
+            feature: 'private-chat',
+            route: location.pathname,
+            socketId: socket.id,
+        })
+
+        socket?.emit(Events.RESPOND_PRIVATE_INVITE, { inviteId, accepted, meta })
+        trackEvent('chat.private.invite_response_requested', {
+            inviteId,
+            accepted,
+            correlationId: meta.correlationId,
+        })
     }
 
     function joinPrivateRoomByToken(token: string) {
@@ -84,7 +121,11 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             return
         }
 
-        const meta = createInteractionMeta({ socketId: socket.id })
+        const meta = createInteractionMeta({
+            feature: 'private-chat',
+            route: location.pathname,
+            socketId: socket.id,
+        })
 
         socket.emit(Events.JOIN_PRIVATE_ROOM_BY_LINK, { token, meta })
         trackEvent('chat.private.link_join_requested', {
@@ -109,9 +150,18 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
         }
 
         const meta = createInteractionMeta({
+            feature: 'private-chat',
             roomId,
+            route: location.pathname,
             socketId: socket.id,
         })
+
+        if (meta.correlationId) {
+            pendingMessagesRef.current.set(meta.correlationId, {
+                startedAt: Date.now(),
+                roomId,
+            })
+        }
 
         socket.emit(Events.SEND_PRIVATE_MESSAGE, {
             roomId,
@@ -119,6 +169,12 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             meta,
         })
         increment('chat.private.message_send_total')
+        trackEvent('client.chat.message.send_started', {
+            correlationId: meta.correlationId,
+            interactionId: meta.interactionId,
+            roomId,
+            messageLength: trimmedContent.length,
+        })
         trackEvent('chat.private.message_submitted', {
             correlationId: meta.correlationId,
             roomId,
@@ -127,29 +183,36 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
     }
 
     function markRoomRead(roomId: string) {
-        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+        const meta = createInteractionMeta({ feature: 'private-chat', roomId, route: location.pathname, socketId: socket?.id })
 
         socket?.emit(Events.MARK_PRIVATE_ROOM_READ, { roomId, meta })
     }
 
     function setTyping(roomId: string, isTyping: boolean) {
-        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+        const meta = createInteractionMeta({ feature: 'private-chat', roomId, route: location.pathname, socketId: socket?.id })
 
         socket?.emit(Events.SET_PRIVATE_TYPING, { roomId, isTyping, meta })
     }
 
     function deletePrivateMessage(roomId: string, messageId: string) {
-        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+        const meta = createInteractionMeta({ feature: 'private-chat', roomId, route: location.pathname, socketId: socket?.id })
 
         socket?.emit(Events.DELETE_PRIVATE_MESSAGE, { roomId, messageId, meta })
-        trackEvent('chat.private.message_delete_requested', { roomId, messageId })
+        trackEvent('chat.private.message_delete_requested', {
+            roomId,
+            messageId,
+            correlationId: meta.correlationId,
+        })
     }
 
     function closeRoom(roomId: string) {
-        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+        const meta = createInteractionMeta({ feature: 'private-chat', roomId, route: location.pathname, socketId: socket?.id })
 
         socket?.emit(Events.CLOSE_PRIVATE_ROOM, { roomId, meta })
-        trackEvent('chat.private.room_close_requested', { roomId })
+        trackEvent('chat.private.room_close_requested', {
+            roomId,
+            correlationId: meta.correlationId,
+        })
     }
 
     function getRoomById(roomId: string) {
@@ -228,9 +291,46 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
                 const delta = updatedRoom.messages.length - (previousRoom?.messages.length ?? 0)
 
                 if (delta > 0) {
-                    const latestMessage = updatedRoom.messages.at(-1)
+                    const nextMessages = updatedRoom.messages.slice(previousRoom?.messages.length ?? 0)
+                    const latestMessage = nextMessages.at(-1)
 
                     increment('chat.private.message_receive_total', delta)
+
+                    for (const nextMessage of nextMessages) {
+                        trackEvent('client.chat.message.received', {
+                            correlationId: nextMessage.meta?.correlationId,
+                            interactionId: nextMessage.meta?.interactionId,
+                            roomId: updatedRoom.id,
+                            messageLength: nextMessage.content.length,
+                            origin: nextMessage.senderId === user.id ? 'self' : 'remote',
+                        })
+
+                        const correlationId = nextMessage.meta?.correlationId
+
+                        if (!correlationId) {
+                            continue
+                        }
+
+                        const pendingMessage = pendingMessagesRef.current.get(correlationId)
+
+                        if (!pendingMessage) {
+                            continue
+                        }
+
+                        const confirmationDurationMs = Date.now() - pendingMessage.startedAt
+
+                        timing('client.chat.message.confirmation.duration_ms', confirmationDurationMs, {
+                            roomId: pendingMessage.roomId,
+                        })
+                        trackEvent('client.chat.message.send_confirmed', {
+                            correlationId,
+                            interactionId: nextMessage.meta?.interactionId,
+                            confirmationDurationMs,
+                            roomId: pendingMessage.roomId,
+                        })
+                        pendingMessagesRef.current.delete(correlationId)
+                    }
+
                     trackEvent('chat.private.messages_synced', {
                         correlationId: latestMessage?.meta?.correlationId,
                         roomId: updatedRoom.id,
@@ -269,11 +369,31 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             }))
         }
 
-        function handlePrivateActionError(message: string) {
+        function handlePrivateActionError(payload: string | PrivateActionErrorPayload) {
+            const errorPayload = typeof payload === 'string'
+                ? { message: payload }
+                : payload
+
+            if (errorPayload.meta?.correlationId) {
+                const pendingMessage = pendingMessagesRef.current.get(errorPayload.meta.correlationId)
+
+                if (pendingMessage) {
+                    increment('client.chat.message.failed.total')
+                    trackEvent('client.chat.message.send_failed', {
+                        correlationId: errorPayload.meta.correlationId,
+                        interactionId: errorPayload.meta.interactionId,
+                        roomId: pendingMessage.roomId,
+                        reason: errorPayload.message,
+                    }, 'warn')
+                    pendingMessagesRef.current.delete(errorPayload.meta.correlationId)
+                }
+            }
+
             trackEvent('chat.private.action_error_received', {
-                reason: message,
+                correlationId: errorPayload.meta?.correlationId,
+                reason: errorPayload.message,
             }, 'warn')
-            notify(message, NotificationType.ERROR)
+            notify(errorPayload.message, NotificationType.ERROR)
         }
 
         socket.on(Events.PRIVATE_STATE_SYNC, handlePrivateStateSync)
@@ -295,7 +415,7 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             socket.off(Events.PRIVATE_TYPING_UPDATED, handlePrivateTypingUpdated)
             socket.off(Events.PRIVATE_ACTION_ERROR, handlePrivateActionError)
         }
-    }, [captureError, increment, location.pathname, navigate, socket, trackEvent, user])
+    }, [captureError, increment, location.pathname, navigate, socket, timing, trackEvent, user])
 
     useEffect(() => {
         if (user) {
