@@ -43,8 +43,8 @@ export function PrivateSidebar({
     }
 
     return (
-        <aside className="flex w-full max-w-sm flex-col border-l bg-muted/30 md:w-96">
-            <div className="space-y-3 border-b p-4">
+        <aside className="flex min-h-0 w-full flex-1 flex-col overflow-hidden border-t bg-muted/30 md:w-96 md:max-w-sm md:flex-none md:border-t-0 md:border-l">
+            <div className="shrink-0 space-y-3 border-b p-4">
                 <div className="flex items-center justify-between gap-2">
                     <div>
                         <h2 className="font-semibold">Chats privados</h2>
@@ -60,7 +60,7 @@ export function PrivateSidebar({
                 ) : null}
             </div>
 
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="min-h-0 flex-1 p-4">
                 <div className="space-y-6">
                     <section className="space-y-2">
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Online</h3>

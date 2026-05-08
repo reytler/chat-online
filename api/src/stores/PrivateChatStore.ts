@@ -201,12 +201,19 @@ export class PrivateChatStore {
             return null
         }
 
+        let hasChanges = false
+
         for (const message of room.messages) {
             if (message.senderId === userId || message.readBy.includes(userId)) {
                 continue
             }
 
             message.readBy.push(userId)
+            hasChanges = true
+        }
+
+        if (!hasChanges) {
+            return null
         }
 
         return clone(room)

@@ -35,57 +35,78 @@ function getMessageStatus(room: PrivateRoomDTO, currentUser: UserDTO, message: P
 
 export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, onTypingChange, onDeleteMessage, onCloseRoom }: PrivateChatViewProps) {
     const messagesViewportRef = useRef<HTMLDivElement | null>(null)
+    const lastMessageIdRef = useRef<string | null>(null)
+    const messageCountRef = useRef(0)
     const otherParticipant = room.participants.find((participant) => participant.userId !== currentUser.id)
     const typingParticipant = room.participants.find((participant) => participant.userId !== currentUser.id && room.activeTypingUserIds.includes(participant.userId))
+    const hasUnreadMessages = room.messages.some((message) => message.senderId !== currentUser.id && !message.readBy.includes(currentUser.id))
 
     useEffect(() => {
         const viewport = messagesViewportRef.current?.querySelector('[data-slot="scroll-area-viewport"]')
+        const lastMessage = room.messages.at(-1) ?? null
 
         if (!(viewport instanceof HTMLDivElement)) {
             return
         }
 
+        if (lastMessageIdRef.current === lastMessage?.id && messageCountRef.current === room.messages.length) {
+            return
+        }
+
         viewport.scrollTop = viewport.scrollHeight
+        lastMessageIdRef.current = lastMessage?.id ?? null
+        messageCountRef.current = room.messages.length
+    }, [room.messages])
+
+    useEffect(() => {
+        if (!hasUnreadMessages) {
+            return
+        }
+
         onMarkRead()
-    }, [onMarkRead, room.messages])
+    }, [currentUser.id, hasUnreadMessages, onMarkRead])
 
     return (
-        <section className="flex h-full flex-col">
-            <div className="border-b p-4">
+        <section className="flex h-full min-h-0 flex-col overflow-hidden">
+            <div className="shrink-0 border-b p-4">
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-semibold" style={{ color: otherParticipant?.color }}>{otherParticipant?.name ?? 'Chat privado'}</h2>
-                        <p className="text-sm text-muted-foreground">
-                            {typingParticipant ? `${typingParticipant.name} esta digitando...` : 'Sala privada 1:1 ativa.'}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Sala privada 1:1 ativa.</p>
                     </div>
                     <Button variant="outline" onClick={onCloseRoom}>Encerrar sala</Button>
                 </div>
             </div>
 
-            <ScrollArea className="flex-1 p-4" ref={messagesViewportRef}>
-                <div className="space-y-3">
+            <ScrollArea className="min-h-0 flex-1" ref={messagesViewportRef}>
+                <div className="space-y-3 p-4">
                     {room.messages.map((message) => {
                         const isOwnMessage = message.senderId === currentUser.id
                         const messageStatus = getMessageStatus(room, currentUser, message)
 
                         return (
-                            <div key={message.id} className={`rounded-xl p-3 ${isOwnMessage ? 'ml-auto bg-primary text-primary-foreground' : 'mr-auto bg-muted'}`}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
+                            <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`w-full max-w-[85%] rounded-xl p-3 sm:max-w-[75%] ${isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
                                         <p className="font-medium">{message.senderName}</p>
-                                        <p className="text-sm opacity-90">{message.deletedAt ? 'Mensagem apagada' : message.content}</p>
+                                            <p className="text-sm opacity-90 break-words whitespace-pre-wrap">{message.deletedAt ? 'Mensagem apagada' : message.content}</p>
+                                        </div>
+                                        {isOwnMessage && !message.deletedAt ? (
+                                            <Button size="sm" variant="ghost" className="shrink-0 self-start" onClick={() => onDeleteMessage(message.id)}>Apagar</Button>
+                                        ) : null}
                                     </div>
-                                    {isOwnMessage && !message.deletedAt ? (
-                                        <Button size="sm" variant="ghost" onClick={() => onDeleteMessage(message.id)}>Apagar</Button>
-                                    ) : null}
+                                    {isOwnMessage && messageStatus ? <p className="mt-2 text-right text-xs opacity-80">{messageStatus}</p> : null}
                                 </div>
-                                {isOwnMessage && messageStatus ? <p className="mt-2 text-right text-xs opacity-80">{messageStatus}</p> : null}
                             </div>
                         )
                     })}
                 </div>
             </ScrollArea>
+
+            <div className="min-h-6 px-4 py-1 text-sm text-muted-foreground">
+                {typingParticipant ? `${typingParticipant.name} esta digitando...` : null}
+            </div>
 
             <MessageComposer
                 placeholder="Digite sua mensagem privada..."
