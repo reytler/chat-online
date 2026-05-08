@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+    readonly VITE_API_URL?: string
     readonly VITE_OBSERVABILITY_ADAPTER?: string
     readonly VITE_OBSERVABILITY_ADAPTERS?: string
     readonly VITE_OBSERVABILITY_APP_NAME?: string

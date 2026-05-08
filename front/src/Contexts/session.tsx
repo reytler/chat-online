@@ -1,4 +1,5 @@
 import { ensureChatDispatch, isSocketReady } from './chatAvailability'
+import { createSocketClient } from '@/config/createSocketClient'
 import { createUuid } from '@/lib/createUuid'
 import { useObservability } from '@/observability'
 import { useSocketTracking } from '@/observability/useSocketTracking'
@@ -6,7 +7,7 @@ import { UserDTO } from '@shared/dtos/UserDTO'
 import { Events } from '@shared/enums/enumEvents'
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { io, Socket } from 'socket.io-client'
+import { Socket } from 'socket.io-client'
 
 type LoginInput = Omit<UserDTO, 'id' | 'idConnection'>
 
@@ -99,7 +100,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
-        const socketIo = io('http://localhost:3001')
+        const socketIo = createSocketClient()
 
         setSocket(socketIo)
 
