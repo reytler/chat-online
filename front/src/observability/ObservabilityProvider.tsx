@@ -1,6 +1,7 @@
 import { ObservabilityMetaDTO } from '@shared/dtos/ObservabilityMetaDTO'
 import { ObservabilityAdapter, ObservabilityAttributes, ObservabilityConfig, ObservabilityLevel } from '@shared/observability'
 import { ReactNode, useCallback, useEffect, useRef } from 'react'
+import { createUuid } from '@/lib/createUuid'
 import { createObservabilityConfig } from './createObservabilityConfig'
 import { normalizeError } from './normalizeError'
 import { ObservabilityContext } from './observabilityContext'
@@ -14,7 +15,7 @@ function getOrCreateSessionId() {
         return existingSessionId
     }
 
-    const nextSessionId = crypto.randomUUID()
+    const nextSessionId = createUuid()
     window.sessionStorage.setItem(SESSION_STORAGE_KEY, nextSessionId)
 
     return nextSessionId
@@ -112,9 +113,9 @@ export function ObservabilityProvider({ children, config = createObservabilityCo
 
     const createInteractionMeta = useCallback((context?: Partial<ObservabilityMetaDTO>) => {
         return {
-            correlationId: crypto.randomUUID(),
-            interactionId: crypto.randomUUID(),
-            traceId: crypto.randomUUID(),
+            correlationId: createUuid(),
+            interactionId: createUuid(),
+            traceId: createUuid(),
             sessionId: sessionIdRef.current,
             screen: context?.screen ?? currentScreenRef.current,
             source: 'front' as const,

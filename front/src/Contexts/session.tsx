@@ -1,4 +1,5 @@
 import { ensureChatDispatch, isSocketReady } from './chatAvailability'
+import { createUuid } from '@/lib/createUuid'
 import { useObservability } from '@/observability'
 import { useSocketTracking } from '@/observability/useSocketTracking'
 import { UserDTO } from '@shared/dtos/UserDTO'
@@ -24,7 +25,7 @@ const SessionContext = createContext<SessionContextValue | undefined>(undefined)
 
 function createSessionUser(userData: LoginInput, socketId: string, currentUser: UserDTO | null): UserDTO {
     return {
-        id: currentUser?.id ?? crypto.randomUUID(),
+        id: currentUser?.id ?? createUuid(),
         ...userData,
         idConnection: socketId,
     }
