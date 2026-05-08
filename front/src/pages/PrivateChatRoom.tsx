@@ -30,7 +30,7 @@ export function PrivateChatRoom() {
     const room = getRoomById(roomId)
 
     const handleSendMessage = useCallback((content: string) => {
-        sendPrivateMessage(roomId, content)
+        return sendPrivateMessage(roomId, content)
     }, [roomId, sendPrivateMessage])
 
     const handleMarkRead = useCallback(() => {
@@ -42,11 +42,11 @@ export function PrivateChatRoom() {
     }, [roomId, setTyping])
 
     const handleDeleteMessage = useCallback((messageId: string) => {
-        deletePrivateMessage(roomId, messageId)
+        return deletePrivateMessage(roomId, messageId)
     }, [deletePrivateMessage, roomId])
 
     const handleCloseRoom = useCallback(() => {
-        closeRoom(roomId)
+        return closeRoom(roomId)
     }, [closeRoom, roomId])
 
     if (!room) {

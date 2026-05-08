@@ -8,7 +8,7 @@ type PublicChatViewProps = {
     user: UserDTO
     messages: MessageDTO[]
     connectedUsers: UserDTO[]
-    onSendMessage: (content: string) => void
+    onSendMessage: (content: string) => boolean
 }
 
 export function PublicChatView({ user, messages, connectedUsers, onSendMessage }: PublicChatViewProps) {

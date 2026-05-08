@@ -1,3 +1,5 @@
+import { ObservabilityMetaDTO } from './ObservabilityMetaDTO'
+
 export type PrivateMessageDTO = {
     id: string
     roomId: string
@@ -9,4 +11,5 @@ export type PrivateMessageDTO = {
     deletedAt: string | null
     deliveredTo: string[]
     readBy: string[]
+    meta?: ObservabilityMetaDTO
 }

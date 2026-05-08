@@ -5,6 +5,7 @@ import { PrivateParticipantDTO } from '@shared/dtos/PrivateParticipantDTO'
 import { PrivateRoomDTO } from '@shared/dtos/PrivateRoomDTO'
 import { PrivateStateDTO } from '@shared/dtos/PrivateStateDTO'
 import { UserDTO } from '@shared/dtos/UserDTO'
+import { ObservabilityMetaDTO } from '@shared/dtos/ObservabilityMetaDTO'
 
 type PrivateRoomRecord = PrivateRoomDTO
 
@@ -219,7 +220,7 @@ export class PrivateChatStore {
         return clone(room)
     }
 
-    public addMessage(roomId: string, sender: UserDTO, content: string) {
+    public addMessage(roomId: string, sender: UserDTO, content: string, meta?: ObservabilityMetaDTO) {
         const room = this.rooms.get(roomId)
 
         if (!room || room.lifecycle !== 'open') {
@@ -237,6 +238,7 @@ export class PrivateChatStore {
             deletedAt: null,
             deliveredTo: [sender.id],
             readBy: [sender.id],
+            meta,
         }
 
         room.messages.push(message)
@@ -290,5 +292,17 @@ export class PrivateChatStore {
         room.activeTypingUserIds = []
 
         return clone(room)
+    }
+
+    public countRooms() {
+        return this.rooms.size
+    }
+
+    public countOpenRooms() {
+        return [...this.rooms.values()].filter((room) => room.lifecycle === 'open').length
+    }
+
+    public countMessages() {
+        return [...this.rooms.values()].reduce((total, room) => total + room.messages.length, 0)
     }
 }

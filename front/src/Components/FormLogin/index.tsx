@@ -3,6 +3,7 @@ import { UserDTO } from "@shared/dtos/UserDTO"
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { CHAT_UNAVAILABLE_MESSAGE } from '@/Contexts/chatAvailability'
 
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
@@ -18,8 +19,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 type TPropsHomeLogin = {
-    handleLogin: (user: Omit<UserDTO, 'idConnection' | 'id'>, options?: { redirectTo?: string })=>void
-    idConnection: string
+    handleLogin: (user: Omit<UserDTO, 'idConnection' | 'id'>, options?: { redirectTo?: string })=>boolean
+    isSocketReady: boolean
     redirectTo?: string
     submitLabel?: string
     title?: string
@@ -28,7 +29,7 @@ type TPropsHomeLogin = {
 
 export function FormLogin({
     handleLogin,
-    idConnection,
+    isSocketReady,
     redirectTo,
     submitLabel = 'Entrar',
     title = 'Entrar no chat',
@@ -43,7 +44,7 @@ export function FormLogin({
     })
 
     function onSubmit(data: FormData){
-        if(idConnection){
+        if(isSocketReady){
             const user: Omit<UserDTO, 'idConnection' | 'id'> = {
                 color: data.color,
                 name: data.name,
@@ -51,7 +52,7 @@ export function FormLogin({
         
             handleLogin(user, { redirectTo })
         }else{
-            notify('Falha ao conectar no chat. Aguarde a conexao e tente novamente.',NotificationType.ERROR)
+            notify(CHAT_UNAVAILABLE_MESSAGE,NotificationType.ERROR)
         }
     }
 
@@ -89,7 +90,7 @@ export function FormLogin({
                         </FormItem>
                     )}
                 />
-                <Button type="submit" disabled={!idConnection}>{submitLabel}</Button>
+                <Button type="submit" disabled={!isSocketReady}>{submitLabel}</Button>
             </form>
         </Form>
     )

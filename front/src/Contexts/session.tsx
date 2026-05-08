@@ -1,4 +1,6 @@
-import { NotificationType, notify } from '@/Components/Notification'
+import { ensureChatDispatch, isSocketReady } from './chatAvailability'
+import { useObservability } from '@/observability'
+import { useSocketTracking } from '@/observability/useSocketTracking'
 import { UserDTO } from '@shared/dtos/UserDTO'
 import { Events } from '@shared/enums/enumEvents'
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
@@ -10,8 +12,9 @@ type LoginInput = Omit<UserDTO, 'id' | 'idConnection'>
 type SessionContextValue = {
     socket: Socket | null
     socketId: string
+    isSocketReady: boolean
     user: UserDTO | null
-    handleLogin: (userData: LoginInput, options?: { redirectTo?: string }) => void
+    handleLogin: (userData: LoginInput, options?: { redirectTo?: string }) => boolean
     handleLogout: () => void
 }
 
@@ -47,11 +50,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const [socketId, setSocketId] = useState('')
     const [user, setUser] = useState<UserDTO | null>(() => readStoredUser())
     const navigate = useNavigate()
+    const { captureError, increment, trackEvent } = useObservability()
+    const socketReady = isSocketReady(socket)
+
+    useSocketTracking({
+        socket,
+        userId: user?.id,
+    })
 
     function handleLogin(userData: LoginInput, options?: { redirectTo?: string }) {
-        if (!socket?.connected || !socket.id) {
-            notify('Conexao com o socket indisponivel. Tente novamente.', NotificationType.ERROR)
-            return
+        if (ensureChatDispatch({
+            socket,
+            blockedEvent: 'chat.session.login_blocked',
+            trackEvent,
+        })) {
+            return false
         }
 
         const nextUser = createSessionUser(userData, socket.id, user)
@@ -59,13 +72,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser))
         setUser(nextUser)
         socket.emit(Events.SETUSER, nextUser)
+        increment('chat.session.login_total')
+        trackEvent('chat.session.login_submitted', {
+            userId: nextUser.id,
+            socketId: socket.id,
+            redirectTo: options?.redirectTo ?? '/chat',
+        })
         navigate(options?.redirectTo ?? '/chat')
+        return true
     }
 
     function handleLogout() {
         if (socket?.connected && user) {
             socket.emit(Events.REMOVEUSER)
         }
+
+        trackEvent('chat.session.logout_requested', {
+            userId: user?.id,
+            socketId: socket?.id,
+        })
 
         window.localStorage.removeItem(STORAGE_KEY)
         setUser(null)
@@ -79,10 +104,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
         socketIo.on('connect', () => {
             setSocketId(socketIo.id ?? '')
+            increment('chat.socket.connected_total')
+            trackEvent('chat.socket.connected', {
+                socketId: socketIo.id,
+            })
         })
 
         socketIo.on('disconnect', () => {
             setSocketId('')
+            trackEvent('chat.socket.disconnected', {
+                socketId: socketIo.id,
+            }, 'warn')
+        })
+
+        socketIo.on('connect_error', (error) => {
+            captureError('chat.socket.connect_error', error)
         })
 
         return () => {
@@ -102,18 +138,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
         if (user.idConnection === socket.id) {
             socket.emit(Events.SETUSER, nextUser)
+            trackEvent('chat.session.user_resynced', {
+                userId: nextUser.id,
+                socketId: socket.id,
+            })
             return
         }
 
         setUser(nextUser)
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser))
         socket.emit(Events.SETUSER, nextUser)
+        trackEvent('chat.session.socket_rebound', {
+            userId: nextUser.id,
+            socketId: socket.id,
+        })
     }, [socket, socketId, user])
 
     return (
         <SessionContext.Provider value={{
             socket,
             socketId,
+            isSocketReady: socketReady,
             user,
             handleLogin,
             handleLogout,
