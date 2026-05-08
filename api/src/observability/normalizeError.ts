@@ -1,4 +1,4 @@
-import { NormalizedError } from './types'
+import { NormalizedError } from '@shared/observability'
 
 export function normalizeError(error: unknown): NormalizedError {
     if (error instanceof Error) {

@@ -1,5 +1,5 @@
 import { normalizeError } from './normalizeError'
-import { ObservabilityAdapter, ObservabilityAttributes, ObservabilityLevel } from './types'
+import { ObservabilityAdapter, ObservabilityAttributes, ObservabilityLevel } from '@shared/observability'
 
 export class ObservabilityService {
     public constructor(private readonly adapter: ObservabilityAdapter) {}

@@ -1,6 +1,6 @@
 import { ConsoleObservabilityAdapter } from './adapters/ConsoleObservabilityAdapter'
 import { NoopObservabilityAdapter } from './adapters/NoopObservabilityAdapter'
-import { ObservabilityAdapter } from './types'
+import { ObservabilityAdapter } from '@shared/observability'
 
 function isEnabled() {
     return import.meta.env.VITE_OBSERVABILITY_ENABLED !== 'false'

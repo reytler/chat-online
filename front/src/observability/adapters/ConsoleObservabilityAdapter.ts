@@ -1,4 +1,4 @@
-import { ObservabilityAdapter, ObservabilityLogEntry, ObservabilityMetric } from '../types'
+import { ObservabilityAdapter, ObservabilityLogEntry, ObservabilityMetric } from '@shared/observability'
 
 export class ConsoleObservabilityAdapter implements ObservabilityAdapter {
     public log(entry: ObservabilityLogEntry) {

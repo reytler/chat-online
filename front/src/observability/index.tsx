@@ -1,8 +1,8 @@
 import { ObservabilityMetaDTO } from '@shared/dtos/ObservabilityMetaDTO'
+import { ObservabilityAdapter, ObservabilityAttributes, ObservabilityLevel } from '@shared/observability'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef } from 'react'
 import { createObservabilityAdapter } from './createObservabilityAdapter'
 import { normalizeError } from './normalizeError'
-import { ObservabilityAdapter, ObservabilityAttributes, ObservabilityLevel } from './types'
 
 type ObservabilityContextValue = {
     captureError: (event: string, error: unknown, context?: ObservabilityAttributes) => void
