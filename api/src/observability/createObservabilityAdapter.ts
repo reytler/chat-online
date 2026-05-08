@@ -2,22 +2,28 @@ import { ConsoleObservabilityAdapter } from './adapters/ConsoleObservabilityAdap
 import { NoopObservabilityAdapter } from './adapters/NoopObservabilityAdapter'
 import { ObservabilityAdapter } from '@shared/observability'
 
-function isEnabled() {
-    return process.env.OBSERVABILITY_ENABLED !== 'false'
+function parseAdapterNames() {
+    const configuredAdapters = process.env.OBSERVABILITY_ADAPTERS ?? process.env.OBSERVABILITY_ADAPTER
+    const defaultAdapterName = process.env.NODE_ENV === 'production' ? 'noop' : 'console'
+
+    return (configuredAdapters ?? defaultAdapterName)
+        .split(',')
+        .map((adapterName) => adapterName.trim().toLowerCase())
+        .filter(Boolean)
 }
 
-export function createObservabilityAdapter(): ObservabilityAdapter {
-    if (!isEnabled()) {
-        return new NoopObservabilityAdapter()
-    }
-
-    const adapterName = process.env.OBSERVABILITY_ADAPTER
-    const defaultAdapterName = process.env.NODE_ENV === 'production' ? 'noop' : 'console'
-    const resolvedAdapterName = adapterName ?? defaultAdapterName
-
-    if (resolvedAdapterName === 'console') {
+function createAdapter(adapterName: string): ObservabilityAdapter {
+    if (adapterName === 'console') {
         return new ConsoleObservabilityAdapter()
     }
 
     return new NoopObservabilityAdapter()
+}
+
+export function createObservabilityAdapters(): ObservabilityAdapter[] {
+    return parseAdapterNames().map(createAdapter)
+}
+
+export function createObservabilityAdapter(): ObservabilityAdapter {
+    return createObservabilityAdapters()[0] ?? new NoopObservabilityAdapter()
 }

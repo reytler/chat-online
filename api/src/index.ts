@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import { createServer } from 'node:http'
 import { Server } from 'socket.io'
-import { createObservabilityAdapter } from './observability/createObservabilityAdapter'
+import { createObservabilityConfig } from './observability/createObservabilityConfig'
 import { ObservabilityService } from './observability/ObservabilityService'
 import { registerSocketHandlers } from './socket/registerSocketHandlers'
 import { PrivateChatStore } from './stores/PrivateChatStore'
@@ -21,7 +21,7 @@ const port = process.env.PORT || 3001
 const userStore = new UserStore()
 const publicMessageStore = new PublicMessageStore()
 const privateChatStore = new PrivateChatStore()
-const observability = new ObservabilityService(createObservabilityAdapter())
+const observability = new ObservabilityService(createObservabilityConfig())
 
 function reportRuntimeMetrics() {
     observability.runtimeSnapshot({ source: 'api' })
