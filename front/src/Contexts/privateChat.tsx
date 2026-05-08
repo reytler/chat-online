@@ -1,4 +1,5 @@
 import { NotificationType, notify } from '@/Components/Notification'
+import { useObservability } from '@/observability'
 import { PrivateInviteDTO } from '@shared/dtos/PrivateInviteDTO'
 import { PrivateRoomDTO } from '@shared/dtos/PrivateRoomDTO'
 import { PrivateStateDTO } from '@shared/dtos/PrivateStateDTO'
@@ -43,50 +44,112 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
     const location = useLocation()
     const [privateState, setPrivateState] = useState<PrivateStateDTO>({ rooms: [], invites: [] })
     const [latestInviteLink, setLatestInviteLink] = useState<string | null>(null)
+    const { captureError, createInteractionMeta, increment, trackEvent } = useObservability()
 
     function createPrivateInvite(targetUserId: string) {
+        if (!socket) {
+            trackEvent('chat.private.invite_create_blocked', { reason: 'socket_unavailable' }, 'warn')
+            return
+        }
+
         socket?.emit(Events.CREATE_PRIVATE_INVITE, { targetUserId })
+        increment('chat.private.invite_create_total')
+        trackEvent('chat.private.invite_create_requested', { targetUserId })
     }
 
     function createPrivateLinkInvite() {
+        if (!socket) {
+            trackEvent('chat.private.link_invite_blocked', { reason: 'socket_unavailable' }, 'warn')
+            return
+        }
+
         socket?.emit(Events.CREATE_PRIVATE_LINK_INVITE)
+        increment('chat.private.link_invite_create_total')
+        trackEvent('chat.private.link_invite_requested')
     }
 
     function respondToInvite(inviteId: string, accepted: boolean) {
+        if (!socket) {
+            trackEvent('chat.private.invite_response_blocked', { reason: 'socket_unavailable', inviteId }, 'warn')
+            return
+        }
+
         socket?.emit(Events.RESPOND_PRIVATE_INVITE, { inviteId, accepted })
+        trackEvent('chat.private.invite_response_requested', { inviteId, accepted })
     }
 
     function joinPrivateRoomByToken(token: string) {
-        socket?.emit(Events.JOIN_PRIVATE_ROOM_BY_LINK, { token })
+        if (!socket?.connected || !socket.id) {
+            trackEvent('chat.private.link_join_blocked', { reason: 'socket_unavailable' }, 'warn')
+            return
+        }
+
+        const meta = createInteractionMeta({ socketId: socket.id })
+
+        socket.emit(Events.JOIN_PRIVATE_ROOM_BY_LINK, { token, meta })
+        trackEvent('chat.private.link_join_requested', {
+            correlationId: meta.correlationId,
+            tokenLength: token.length,
+        })
     }
 
     function sendPrivateMessage(roomId: string, content: string) {
         const trimmedContent = content.trim()
 
-        if (!trimmedContent) {
+        if (!socket?.connected || !socket.id || !trimmedContent) {
+            if (!trimmedContent) {
+                return
+            }
+
+            trackEvent('chat.private.message_send_blocked', {
+                reason: 'session_unavailable',
+                roomId,
+            }, 'warn')
             return
         }
 
-        socket?.emit(Events.SEND_PRIVATE_MESSAGE, {
+        const meta = createInteractionMeta({
+            roomId,
+            socketId: socket.id,
+        })
+
+        socket.emit(Events.SEND_PRIVATE_MESSAGE, {
             roomId,
             content: trimmedContent,
+            meta,
+        })
+        increment('chat.private.message_send_total')
+        trackEvent('chat.private.message_submitted', {
+            correlationId: meta.correlationId,
+            roomId,
+            messageLength: trimmedContent.length,
         })
     }
 
     function markRoomRead(roomId: string) {
-        socket?.emit(Events.MARK_PRIVATE_ROOM_READ, { roomId })
+        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+
+        socket?.emit(Events.MARK_PRIVATE_ROOM_READ, { roomId, meta })
     }
 
     function setTyping(roomId: string, isTyping: boolean) {
-        socket?.emit(Events.SET_PRIVATE_TYPING, { roomId, isTyping })
+        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+
+        socket?.emit(Events.SET_PRIVATE_TYPING, { roomId, isTyping, meta })
     }
 
     function deletePrivateMessage(roomId: string, messageId: string) {
-        socket?.emit(Events.DELETE_PRIVATE_MESSAGE, { roomId, messageId })
+        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+
+        socket?.emit(Events.DELETE_PRIVATE_MESSAGE, { roomId, messageId, meta })
+        trackEvent('chat.private.message_delete_requested', { roomId, messageId })
     }
 
     function closeRoom(roomId: string) {
-        socket?.emit(Events.CLOSE_PRIVATE_ROOM, { roomId })
+        const meta = createInteractionMeta({ roomId, socketId: socket?.id })
+
+        socket?.emit(Events.CLOSE_PRIVATE_ROOM, { roomId, meta })
+        trackEvent('chat.private.room_close_requested', { roomId })
     }
 
     function getRoomById(roomId: string) {
@@ -104,6 +167,10 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
                 : null
 
             setPrivateState(nextState)
+            trackEvent('chat.private.state_synced', {
+                roomCount: nextState.rooms.length,
+                inviteCount: nextState.invites.length,
+            })
 
             if (activePrivateRoomId && !nextState.rooms.some((room) => room.id === activePrivateRoomId)) {
                 navigate('/chat')
@@ -112,6 +179,11 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
 
         function handlePrivateInviteReceived(invite: PrivateInviteDTO) {
             if (invite.targetUserId === user.id) {
+                increment('chat.private.invite_received_total')
+                trackEvent('chat.private.invite_received', {
+                    inviteId: invite.id,
+                    creatorUserId: invite.createdByUserId,
+                })
                 notify(`${invite.createdByName} convidou voce para um chat privado.`, NotificationType.INFO)
             }
         }
@@ -123,7 +195,14 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
 
             const nextInviteLink = `${window.location.origin}/invite/${invite.token}`
             setLatestInviteLink(nextInviteLink)
-            navigator.clipboard.writeText(nextInviteLink).catch(() => undefined)
+            navigator.clipboard.writeText(nextInviteLink).catch((error) => {
+                captureError('chat.private.link_invite_copy_failed', error, {
+                    inviteId: invite.id,
+                })
+            })
+            trackEvent('chat.private.link_invite_created', {
+                inviteId: invite.id,
+            })
             notify('Link privado criado e copiado para a area de transferencia.', NotificationType.SUCCESS)
         }
 
@@ -132,6 +211,11 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
                 ...currentState,
                 rooms: upsertRoom(currentState.rooms, room),
             }))
+            trackEvent('chat.private.room_opened', {
+                roomId: room.id,
+                participantCount: room.participants.length,
+                shouldNavigate,
+            })
 
             if (shouldNavigate) {
                 navigate(`/chat/private/${room.id}`)
@@ -139,10 +223,27 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
         }
 
         function handlePrivateRoomUpdated(updatedRoom: PrivateRoomDTO) {
-            setPrivateState((currentState) => ({
-                ...currentState,
-                rooms: upsertRoom(currentState.rooms, updatedRoom),
-            }))
+            setPrivateState((currentState) => {
+                const previousRoom = currentState.rooms.find((room) => room.id === updatedRoom.id)
+                const delta = updatedRoom.messages.length - (previousRoom?.messages.length ?? 0)
+
+                if (delta > 0) {
+                    const latestMessage = updatedRoom.messages.at(-1)
+
+                    increment('chat.private.message_receive_total', delta)
+                    trackEvent('chat.private.messages_synced', {
+                        correlationId: latestMessage?.meta?.correlationId,
+                        roomId: updatedRoom.id,
+                        delta,
+                        totalMessages: updatedRoom.messages.length,
+                    })
+                }
+
+                return {
+                    ...currentState,
+                    rooms: upsertRoom(currentState.rooms, updatedRoom),
+                }
+            })
         }
 
         function handlePrivateRoomClosed(closedRoom: PrivateRoomDTO) {
@@ -150,6 +251,9 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
                 ...currentState,
                 rooms: currentState.rooms.filter((room) => room.id !== closedRoom.id),
             }))
+            trackEvent('chat.private.room_closed', {
+                roomId: closedRoom.id,
+            })
 
             if (location.pathname === `/chat/private/${closedRoom.id}`) {
                 navigate('/chat')
@@ -166,6 +270,9 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
         }
 
         function handlePrivateActionError(message: string) {
+            trackEvent('chat.private.action_error_received', {
+                reason: message,
+            }, 'warn')
             notify(message, NotificationType.ERROR)
         }
 
@@ -188,7 +295,7 @@ export function PrivateChatProvider({ children }: { children: ReactNode }) {
             socket.off(Events.PRIVATE_TYPING_UPDATED, handlePrivateTypingUpdated)
             socket.off(Events.PRIVATE_ACTION_ERROR, handlePrivateActionError)
         }
-    }, [location.pathname, navigate, socket, user])
+    }, [captureError, increment, location.pathname, navigate, socket, trackEvent, user])
 
     useEffect(() => {
         if (user) {
