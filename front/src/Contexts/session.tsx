@@ -1,4 +1,4 @@
-import { NotificationType, notify } from '@/Components/Notification'
+import { ensureChatDispatch, isSocketReady } from './chatAvailability'
 import { useObservability } from '@/observability'
 import { useSocketTracking } from '@/observability/useSocketTracking'
 import { UserDTO } from '@shared/dtos/UserDTO'
@@ -12,8 +12,9 @@ type LoginInput = Omit<UserDTO, 'id' | 'idConnection'>
 type SessionContextValue = {
     socket: Socket | null
     socketId: string
+    isSocketReady: boolean
     user: UserDTO | null
-    handleLogin: (userData: LoginInput, options?: { redirectTo?: string }) => void
+    handleLogin: (userData: LoginInput, options?: { redirectTo?: string }) => boolean
     handleLogout: () => void
 }
 
@@ -50,6 +51,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserDTO | null>(() => readStoredUser())
     const navigate = useNavigate()
     const { captureError, increment, trackEvent } = useObservability()
+    const socketReady = isSocketReady(socket)
 
     useSocketTracking({
         socket,
@@ -57,12 +59,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     })
 
     function handleLogin(userData: LoginInput, options?: { redirectTo?: string }) {
-        if (!socket?.connected || !socket.id) {
-            trackEvent('chat.session.login_blocked', {
-                reason: 'socket_unavailable',
-            }, 'warn')
-            notify('Conexao com o socket indisponivel. Tente novamente.', NotificationType.ERROR)
-            return
+        if (ensureChatDispatch({
+            socket,
+            blockedEvent: 'chat.session.login_blocked',
+            trackEvent,
+        })) {
+            return false
         }
 
         const nextUser = createSessionUser(userData, socket.id, user)
@@ -77,6 +79,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             redirectTo: options?.redirectTo ?? '/chat',
         })
         navigate(options?.redirectTo ?? '/chat')
+        return true
     }
 
     function handleLogout() {
@@ -155,6 +158,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         <SessionContext.Provider value={{
             socket,
             socketId,
+            isSocketReady: socketReady,
             user,
             handleLogin,
             handleLogout,

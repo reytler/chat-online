@@ -4,12 +4,13 @@ import { MessageDTO } from '@shared/dtos/MessageDTO'
 import { UserDTO } from '@shared/dtos/UserDTO'
 import { Events } from '@shared/enums/enumEvents'
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react'
+import { ensureChatDispatch } from './chatAvailability'
 import { useSession } from './session'
 
 type PublicChatContextValue = {
     connectedUsers: UserDTO[]
     messages: MessageDTO[]
-    handleSendMessage: (content: string) => void
+    handleSendMessage: (content: string) => boolean
 }
 
 const PublicChatContext = createContext<PublicChatContextValue | undefined>(undefined)
@@ -22,17 +23,20 @@ export function PublicChatProvider({ children }: { children: ReactNode }) {
     const pendingMessagesRef = useRef(new Map<string, { startedAt: number, roomId: string }>())
 
     function handleSendMessage(content: string) {
-        if (!socket?.connected || !socket.id || !user) {
-            trackEvent('chat.public.message_send_blocked', {
-                reason: 'session_unavailable',
-            }, 'warn')
-            return
-        }
-
         const trimmedContent = content.trim()
 
         if (!trimmedContent) {
-            return
+            return false
+        }
+
+        if (ensureChatDispatch({
+            socket,
+            hasUser: Boolean(user),
+            requireUser: true,
+            blockedEvent: 'chat.public.message_send_blocked',
+            trackEvent,
+        })) {
+            return false
         }
 
         const message: MessageDTO = {
@@ -67,6 +71,7 @@ export function PublicChatProvider({ children }: { children: ReactNode }) {
             messageLength: trimmedContent.length,
             socketId: socket.id,
         })
+        return true
     }
 
     useEffect(() => {

@@ -3,7 +3,7 @@ import { useSession } from "@/Contexts";
 import { Navigate } from "react-router-dom";
 
 export function Login(){
-    const {user,handleLogin, socketId} = useSession()
+    const {user,handleLogin, isSocketReady} = useSession()
 
     if (user) {
         return <Navigate to="/chat" replace />
@@ -12,7 +12,7 @@ export function Login(){
     return(
         <FormLogin
             handleLogin={handleLogin}
-            idConnection={socketId}
+            isSocketReady={isSocketReady}
         />
     )
 }
