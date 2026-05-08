@@ -4,11 +4,14 @@ import { monitorEventLoopDelay } from 'node:perf_hooks'
 import { Server } from 'socket.io'
 import { createObservabilityConfig } from './observability/createObservabilityConfig'
 import { createHttpObservabilityMiddleware } from './observability/createHttpObservabilityMiddleware'
+import { initSentry } from './observability/sentry/initSentry'
 import { ObservabilityService } from './observability/ObservabilityService'
 import { registerSocketHandlers } from './socket/registerSocketHandlers'
 import { PrivateChatStore } from './stores/PrivateChatStore'
 import { PublicMessageStore } from './stores/PublicMessageStore'
 import { UserStore } from './stores/UserStore'
+
+initSentry()
 
 const app = express()
 const server = createServer(app)

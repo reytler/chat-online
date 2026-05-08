@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/reytler/chat-online#readme",
   "dependencies": {
+    "@sentry/node": "^10.20.0",
     "express": "^5.1.0",
     "socket.io": "^4.8.1"
   },
