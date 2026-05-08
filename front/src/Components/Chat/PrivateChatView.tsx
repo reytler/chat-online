@@ -85,17 +85,19 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
                         const messageStatus = getMessageStatus(room, currentUser, message)
 
                         return (
-                            <div key={message.id} className={`rounded-xl p-3 ${isOwnMessage ? 'ml-auto bg-primary text-primary-foreground' : 'mr-auto bg-muted'}`}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
+                            <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`w-full max-w-[85%] rounded-xl p-3 sm:max-w-[75%] ${isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
                                         <p className="font-medium">{message.senderName}</p>
-                                        <p className="text-sm opacity-90">{message.deletedAt ? 'Mensagem apagada' : message.content}</p>
+                                            <p className="text-sm opacity-90 break-words whitespace-pre-wrap">{message.deletedAt ? 'Mensagem apagada' : message.content}</p>
+                                        </div>
+                                        {isOwnMessage && !message.deletedAt ? (
+                                            <Button size="sm" variant="ghost" className="shrink-0 self-start" onClick={() => onDeleteMessage(message.id)}>Apagar</Button>
+                                        ) : null}
                                     </div>
-                                    {isOwnMessage && !message.deletedAt ? (
-                                        <Button size="sm" variant="ghost" onClick={() => onDeleteMessage(message.id)}>Apagar</Button>
-                                    ) : null}
+                                    {isOwnMessage && messageStatus ? <p className="mt-2 text-right text-xs opacity-80">{messageStatus}</p> : null}
                                 </div>
-                                {isOwnMessage && messageStatus ? <p className="mt-2 text-right text-xs opacity-80">{messageStatus}</p> : null}
                             </div>
                         )
                     })}
