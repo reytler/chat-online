@@ -1,5 +1,6 @@
 import { ConsoleObservabilityAdapter } from './adapters/ConsoleObservabilityAdapter'
 import { NoopObservabilityAdapter } from './adapters/NoopObservabilityAdapter'
+import { SentryObservabilityAdapter } from './adapters/SentryObservabilityAdapter'
 import { ObservabilityAdapter } from '@shared/observability'
 
 function parseAdapterNames() {
@@ -15,6 +16,10 @@ function parseAdapterNames() {
 function createAdapter(adapterName: string): ObservabilityAdapter {
     if (adapterName === 'console') {
         return new ConsoleObservabilityAdapter()
+    }
+
+    if (adapterName === 'sentry') {
+        return new SentryObservabilityAdapter()
     }
 
     return new NoopObservabilityAdapter()

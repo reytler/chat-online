@@ -68,6 +68,27 @@ Este é um projeto de um **chat instantâneo** construído com **Node.js (backen
 - [ ] Deploy automatizado com GitHub Actions
 - [ ] Hospedagem do frontend e backend na nuvem
 
+## Observabilidade
+
+Frontend (`front/`):
+- `VITE_OBSERVABILITY_ADAPTERS=sentry,console` para registrar o adapter do Sentry junto com o console em desenvolvimento.
+- `VITE_SENTRY_ENABLED=true` habilita o envio ao Sentry.
+- `VITE_SENTRY_DSN=<dsn>` define o DSN.
+- `VITE_SENTRY_ENVIRONMENT=<environment>` sobrescreve o ambiente; por padrão usa `import.meta.env.MODE`.
+- `VITE_SENTRY_RELEASE=<release>` define a release publicada.
+
+API (`api/`):
+- `OBSERVABILITY_ADAPTERS=sentry,console` para registrar o adapter do Sentry junto com o console em desenvolvimento.
+- `SENTRY_ENABLED=true` habilita o envio ao Sentry.
+- `SENTRY_DSN=<dsn>` define o DSN.
+- `SENTRY_ENVIRONMENT=<environment>` sobrescreve o ambiente; por padrão usa `NODE_ENV`.
+- `SENTRY_RELEASE=<release>` define a release publicada.
+
+Notas:
+- A integracao envia apenas erros/excecoes ao Sentry.
+- Os componentes e regras de negocio continuam falando apenas com a abstracao de observabilidade existente.
+- Contextos como `socketId`, `route`, `roomId` e `userName` podem ser enviados quando presentes no evento capturado.
+
 ## 📄 Licença
 
 Este projeto é de uso exclusivo do autor. Todos os direitos reservados. Para mais detalhes, veja o arquivo [LICENSE](./LICENSE).
