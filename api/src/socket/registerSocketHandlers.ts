@@ -698,6 +698,7 @@ export function registerSocketHandlers({ io, socket, userStore, publicMessageSto
 
     socket.on('disconnect', (reason) => {
         observability.increment('socket.connection.closed_total', 1)
+        observability.increment('socket.disconnections.total', 1, { source: 'api' })
         observability.info('socket.connection.closed', {
             socketId: socket.id,
             source: 'api',
