@@ -22,4 +22,8 @@ export class UserStore {
     public getAll() {
         return [...this.users.values()]
     }
+
+    public count() {
+        return this.users.size
+    }
 }

@@ -10,4 +10,8 @@ export class PublicMessageStore {
     public getAll() {
         return [...this.messages]
     }
+
+    public count() {
+        return this.messages.length
+    }
 }
