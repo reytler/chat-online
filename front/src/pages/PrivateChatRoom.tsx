@@ -1,6 +1,7 @@
 import { ChatLayout } from '@/Components/Chat/ChatLayout'
 import { PrivateChatView } from '@/Components/Chat/PrivateChatView'
 import { usePrivateChat, usePublicChat, useSession } from '@/Contexts'
+import { useCallback } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 
 export function PrivateChatRoom() {
@@ -28,6 +29,26 @@ export function PrivateChatRoom() {
 
     const room = getRoomById(roomId)
 
+    const handleSendMessage = useCallback((content: string) => {
+        sendPrivateMessage(roomId, content)
+    }, [roomId, sendPrivateMessage])
+
+    const handleMarkRead = useCallback(() => {
+        markRoomRead(roomId)
+    }, [markRoomRead, roomId])
+
+    const handleTypingChange = useCallback((isTyping: boolean) => {
+        setTyping(roomId, isTyping)
+    }, [roomId, setTyping])
+
+    const handleDeleteMessage = useCallback((messageId: string) => {
+        deletePrivateMessage(roomId, messageId)
+    }, [deletePrivateMessage, roomId])
+
+    const handleCloseRoom = useCallback(() => {
+        closeRoom(roomId)
+    }, [closeRoom, roomId])
+
     if (!room) {
         return <Navigate to="/chat" replace />
     }
@@ -48,11 +69,11 @@ export function PrivateChatRoom() {
             <PrivateChatView
                 room={room}
                 currentUser={user}
-                onSendMessage={(content) => sendPrivateMessage(room.id, content)}
-                onMarkRead={() => markRoomRead(room.id)}
-                onTypingChange={(isTyping) => setTyping(room.id, isTyping)}
-                onDeleteMessage={(messageId) => deletePrivateMessage(room.id, messageId)}
-                onCloseRoom={() => closeRoom(room.id)}
+                onSendMessage={handleSendMessage}
+                onMarkRead={handleMarkRead}
+                onTypingChange={handleTypingChange}
+                onDeleteMessage={handleDeleteMessage}
+                onCloseRoom={handleCloseRoom}
             />
         </ChatLayout>
     )

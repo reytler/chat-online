@@ -35,19 +35,36 @@ function getMessageStatus(room: PrivateRoomDTO, currentUser: UserDTO, message: P
 
 export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, onTypingChange, onDeleteMessage, onCloseRoom }: PrivateChatViewProps) {
     const messagesViewportRef = useRef<HTMLDivElement | null>(null)
+    const lastMessageIdRef = useRef<string | null>(null)
+    const messageCountRef = useRef(0)
     const otherParticipant = room.participants.find((participant) => participant.userId !== currentUser.id)
     const typingParticipant = room.participants.find((participant) => participant.userId !== currentUser.id && room.activeTypingUserIds.includes(participant.userId))
+    const hasUnreadMessages = room.messages.some((message) => message.senderId !== currentUser.id && !message.readBy.includes(currentUser.id))
 
     useEffect(() => {
         const viewport = messagesViewportRef.current?.querySelector('[data-slot="scroll-area-viewport"]')
+        const lastMessage = room.messages.at(-1) ?? null
 
         if (!(viewport instanceof HTMLDivElement)) {
             return
         }
 
+        if (lastMessageIdRef.current === lastMessage?.id && messageCountRef.current === room.messages.length) {
+            return
+        }
+
         viewport.scrollTop = viewport.scrollHeight
+        lastMessageIdRef.current = lastMessage?.id ?? null
+        messageCountRef.current = room.messages.length
+    }, [room.messages])
+
+    useEffect(() => {
+        if (!hasUnreadMessages) {
+            return
+        }
+
         onMarkRead()
-    }, [onMarkRead, room.messages])
+    }, [currentUser.id, hasUnreadMessages, onMarkRead])
 
     return (
         <section className="flex h-full min-h-0 flex-col overflow-hidden">
