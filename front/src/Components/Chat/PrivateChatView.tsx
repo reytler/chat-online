@@ -72,9 +72,7 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-semibold" style={{ color: otherParticipant?.color }}>{otherParticipant?.name ?? 'Chat privado'}</h2>
-                        <p className="text-sm text-muted-foreground">
-                            {typingParticipant ? `${typingParticipant.name} esta digitando...` : 'Sala privada 1:1 ativa.'}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Sala privada 1:1 ativa.</p>
                     </div>
                     <Button variant="outline" onClick={onCloseRoom}>Encerrar sala</Button>
                 </div>
@@ -103,6 +101,10 @@ export function PrivateChatView({ room, currentUser, onSendMessage, onMarkRead, 
                     })}
                 </div>
             </ScrollArea>
+
+            <div className="min-h-6 px-4 py-1 text-sm text-muted-foreground">
+                {typingParticipant ? `${typingParticipant.name} esta digitando...` : null}
+            </div>
 
             <MessageComposer
                 placeholder="Digite sua mensagem privada..."
